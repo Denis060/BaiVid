@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import type { PlanType } from "@/types";
 
 interface CreditsState {
   credits: number;
-  plan: "free" | "starter" | "pro" | "business";
+  plan: PlanType;
   isLoading: boolean;
   setCredits: (credits: number) => void;
   setPlan: (plan: CreditsState["plan"]) => void;

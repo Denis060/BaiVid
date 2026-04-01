@@ -1,49 +1,35 @@
-export interface User {
-  id: string;
-  email: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  credits: number;
-  plan: "free" | "starter" | "pro" | "business";
-  stripe_customer_id: string | null;
-  created_at: string;
-}
+import type { Tables, Enums } from "./supabase";
 
-export interface Video {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  type: "faceless" | "avatar";
-  status: "draft" | "processing" | "completed" | "failed";
-  video_url: string | null;
-  thumbnail_url: string | null;
-  duration: number | null;
-  script: string | null;
-  created_at: string;
-  updated_at: string;
-  scheduled_at: string | null;
-  published_at: string | null;
-}
+// ========================
+// Row types (direct from DB)
+// ========================
+export type User = Tables<"users">;
+export type Subscription = Tables<"subscriptions">;
+export type CreditTransaction = Tables<"credits_transactions">;
+export type Video = Tables<"videos">;
+export type Script = Tables<"scripts">;
+export type Idea = Tables<"ideas">;
+export type Avatar = Tables<"avatars">;
+export type VoiceProfile = Tables<"voice_profiles">;
+export type ScheduledPost = Tables<"scheduled_posts">;
+export type ConnectedAccount = Tables<"connected_accounts">;
+export type AnalyticsSnapshot = Tables<"analytics_snapshots">;
+export type AutopilotProfile = Tables<"autopilot_profiles">;
+export type AutopilotRun = Tables<"autopilot_runs">;
+export type AutopilotApproval = Tables<"autopilot_approvals">;
+export type EmailLog = Tables<"email_logs">;
+export type EmailPreferences = Tables<"email_preferences">;
 
-export interface Idea {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  category: string | null;
-  status: "new" | "scripted" | "produced" | "archived";
-  created_at: string;
-}
-
-export interface Script {
-  id: string;
-  user_id: string;
-  idea_id: string | null;
-  title: string;
-  content: string;
-  tone: string | null;
-  duration_target: number | null;
-  created_at: string;
-  updated_at: string;
-}
+// ========================
+// Enum types
+// ========================
+export type PlanType = Enums<"plan_type">;
+export type VideoStatus = Enums<"video_status">;
+export type VideoType = Enums<"video_type">;
+export type IdeaStatus = Enums<"idea_status">;
+export type CreditType = Enums<"credit_type">;
+export type PostStatus = Enums<"post_status">;
+export type PlatformType = Enums<"platform_type">;
+export type AutopilotStatus = Enums<"autopilot_status">;
+export type ApprovalStatus = Enums<"approval_status">;
+export type EmailType = Enums<"email_type">;
