@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { getStripe, getPlanByPriceId, getTopupByPriceId, PLANS } from "@/lib/stripe";
-import { getResend } from "@/lib/resend";
+import { sendPaymentFailedEmail } from "@/lib/email";
 import type { Database } from "@/types/supabase";
 import type Stripe from "stripe";
 
@@ -253,33 +253,34 @@ async function handlePaymentFailed(
   const customerId = invoice.customer as string;
   const { data: user } = await supabase
     .from("users")
-    .select("id, email")
+    .select("id, email, plan")
     .eq("stripe_customer_id", customerId)
     .single();
 
   if (!user) return;
 
-  // Send payment failed email
+  const planNames: Record<string, string> = {
+    free: "Free",
+    starter: "Starter",
+    pro: "Pro",
+    agency: "Agency",
+  };
+
+  // Send payment failed email using React Email template
   try {
-    await getResend().emails.send({
-      from: "Baivid <noreply@baivid.com>",
-      to: user.email,
+    const result = await sendPaymentFailedEmail(
+      user.email,
+      planNames[user.plan] || "Unknown"
+    );
+
+    await supabase.from("email_logs").insert({
+      user_id: user.id,
+      type: "payment_failed",
       subject: "Payment failed — please update your payment method",
-      html: `
-        <h2>Payment Failed</h2>
-        <p>We were unable to process your payment. Please update your payment method to continue using Baivid.</p>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/settings">Update Payment Method</a></p>
-      `,
+      resend_id: result.data?.id || null,
+      status: "sent",
     });
   } catch (err) {
     console.error("Failed to send payment failed email:", err);
   }
-
-  // Log email
-  await supabase.from("email_logs").insert({
-    user_id: user.id,
-    type: "payment_failed",
-    subject: "Payment failed — please update your payment method",
-    status: "sent",
-  });
 }

@@ -14,6 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Loader2,
   Check,
@@ -21,8 +23,13 @@ import {
   CreditCard,
   ExternalLink,
   ArrowRight,
+  Zap,
 } from "lucide-react";
 import { createCheckoutSession, createPortalSession } from "@/actions/billing";
+import {
+  getAutoTopupSettings,
+  updateAutoTopupSettings,
+} from "@/actions/credits";
 import { useCreditsStore } from "@/stores/credits-store";
 import { createClient } from "@/lib/supabase/client";
 import type { CreditTransaction } from "@/types";
@@ -114,12 +121,16 @@ function BillingContent() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
+  const [autoTopupEnabled, setAutoTopupEnabled] = useState(false);
+  const [autoTopupThreshold, setAutoTopupThreshold] = useState(50);
+  const [savingTopup, setSavingTopup] = useState(false);
 
   const planCredits = getPlanCredits(plan);
   const usagePercent = Math.min(100, Math.round((credits / planCredits) * 100));
+  const canAutoTopup = plan === "pro" || plan === "agency";
 
   useEffect(() => {
-    async function fetchTransactions() {
+    async function fetchData() {
       const supabase = createClient();
       const { data } = await supabase
         .from("credits_transactions")
@@ -128,9 +139,17 @@ function BillingContent() {
         .limit(20);
       setTransactions(data || []);
       setLoadingTransactions(false);
+
+      if (canAutoTopup) {
+        const settings = await getAutoTopupSettings();
+        if (settings) {
+          setAutoTopupEnabled(settings.auto_topup_enabled);
+          setAutoTopupThreshold(settings.auto_topup_threshold);
+        }
+      }
     }
-    fetchTransactions();
-  }, []);
+    fetchData();
+  }, [canAutoTopup]);
 
   async function handleSubscribe(priceId: string | undefined, planKey: string) {
     if (!priceId) return;
@@ -351,6 +370,78 @@ function BillingContent() {
           ))}
         </div>
       </div>
+
+      {/* Auto Top-up (Pro/Agency only) */}
+      {canAutoTopup && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Auto Top-up
+            </CardTitle>
+            <CardDescription>
+              Automatically purchase credits when your balance drops below a
+              threshold. Uses your default payment method.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoTopupEnabled}
+                  onChange={(e) => setAutoTopupEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded border-border accent-primary"
+                />
+                <span className="text-sm font-medium">
+                  Enable auto top-up
+                </span>
+              </label>
+            </div>
+            {autoTopupEnabled && (
+              <div className="flex items-end gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="threshold">
+                    Top up when credits fall below
+                  </Label>
+                  <Input
+                    id="threshold"
+                    type="number"
+                    min={10}
+                    max={1000}
+                    value={autoTopupThreshold}
+                    onChange={(e) =>
+                      setAutoTopupThreshold(Number(e.target.value))
+                    }
+                    className="w-32"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground pb-2">
+                  Will purchase the Small pack (300 credits / $5)
+                  automatically.
+                </p>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              disabled={savingTopup}
+              onClick={async () => {
+                setSavingTopup(true);
+                await updateAutoTopupSettings(
+                  autoTopupEnabled,
+                  autoTopupThreshold
+                );
+                setSavingTopup(false);
+              }}
+            >
+              {savingTopup ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Save Settings
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Separator />
 
