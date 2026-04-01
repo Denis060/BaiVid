@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --eslint --no-git --import-alias \"@/*\" --use-npm)",
+      "Bash(npx create-next-app@latest baivid --typescript --tailwind --app --src-dir --eslint --no-git --import-alias \"@/*\" --use-npm)",
+      "Bash(shopt -s dotglob)",
+      "Bash(mv baivid/* baivid/.* .)",
+      "Bash(rmdir baivid:*)",
+      "Bash(npx shadcn@latest init -d --base-color neutral --css-variables --style default)",
+      "Bash(npx shadcn@latest init -d)"
+    ]
+  }
+}
