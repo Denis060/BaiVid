@@ -15,6 +15,7 @@ import {
   CalendarDays,
   BarChart3,
   Settings,
+  CreditCard,
   Coins,
   LogOut,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const navItems = [
   { label: "Scheduler", href: "/scheduler", icon: Clock },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Billing", href: "/billing", icon: CreditCard },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 

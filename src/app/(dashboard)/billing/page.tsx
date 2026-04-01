@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +12,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Check, Coins, CreditCard, ExternalLink } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  Coins,
+  CreditCard,
+  ExternalLink,
+  ArrowRight,
+} from "lucide-react";
 import { createCheckoutSession, createPortalSession } from "@/actions/billing";
 import { useCreditsStore } from "@/stores/credits-store";
 import { createClient } from "@/lib/supabase/client";
@@ -36,6 +45,7 @@ const PLANS = [
     name: "Starter",
     price: 12,
     credits: 500,
+    popular: false,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_STARTER,
     features: [
       "500 credits/month",
@@ -50,6 +60,7 @@ const PLANS = [
     name: "Pro",
     price: 29,
     credits: 1500,
+    popular: true,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO,
     features: [
       "1,500 credits/month",
@@ -65,6 +76,7 @@ const PLANS = [
     name: "Agency",
     price: 79,
     credits: 5000,
+    popular: false,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_AGENCY,
     features: [
       "5,000 credits/month",
@@ -87,7 +99,12 @@ const TOPUPS = [
   { name: "Pro", credits: 6000, price: 60, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TOPUP_PRO },
 ] as const;
 
-function SettingsContent() {
+function getPlanCredits(plan: string): number {
+  const p = PLANS.find((pl) => pl.key === plan);
+  return p?.credits || 50;
+}
+
+function BillingContent() {
   const { credits, plan } = useCreditsStore();
   const searchParams = useSearchParams();
   const billingStatus = searchParams.get("billing");
@@ -97,6 +114,9 @@ function SettingsContent() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
+
+  const planCredits = getPlanCredits(plan);
+  const usagePercent = Math.min(100, Math.round((credits / planCredits) * 100));
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -142,17 +162,33 @@ function SettingsContent() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your plan, billing, and credits.
-        </p>
+    <div className="space-y-8 max-w-6xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Billing</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your subscription, credits, and payment methods.
+          </p>
+        </div>
+        {plan !== "free" && (
+          <Button
+            variant="outline"
+            onClick={handleManageSubscription}
+            disabled={loadingPortal}
+          >
+            {loadingPortal ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ExternalLink className="mr-2 h-4 w-4" />
+            )}
+            Manage Subscription
+          </Button>
+        )}
       </div>
 
       {billingStatus === "success" && (
         <div className="rounded-lg border border-primary/50 bg-primary/10 px-4 py-3 text-sm text-primary">
-          Payment successful! Your plan has been updated.
+          Payment successful! Your account has been updated.
         </div>
       )}
       {billingStatus === "cancelled" && (
@@ -161,54 +197,76 @@ function SettingsContent() {
         </div>
       )}
 
-      {/* Current Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Current Plan
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold capitalize">{plan}</span>
-                <Badge variant="outline" className="capitalize">{plan}</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {credits.toLocaleString()} credits remaining
+      {/* Credit Overview */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Current Plan</CardDescription>
+            <CardTitle className="text-2xl capitalize">{plan}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {plan !== "free" ? (
+              <p className="text-xs text-muted-foreground">
+                ${PLANS.find((p) => p.key === plan)?.price}/month
               </p>
-            </div>
-            {plan !== "free" && (
-              <Button
-                variant="outline"
-                onClick={handleManageSubscription}
-                disabled={loadingPortal}
-              >
-                {loadingPortal ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                )}
-                Manage Subscription
-              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground">Free forever</p>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Credits Remaining</CardDescription>
+            <CardTitle className="text-2xl">
+              {credits.toLocaleString()}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Progress value={usagePercent} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">
+              {usagePercent}% of {planCredits.toLocaleString()} monthly credits
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Cost per Credit</CardDescription>
+            <CardTitle className="text-2xl">
+              {plan === "free"
+                ? "Free"
+                : `$${((PLANS.find((p) => p.key === plan)?.price || 0) / planCredits).toFixed(3)}`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="#topup"
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+            >
+              Buy more credits <ArrowRight className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Plans */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Plans</h2>
+        <h2 className="text-xl font-semibold mb-4">Choose Your Plan</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((p) => {
             const isCurrent = plan === p.key;
+            const isPopular = "popular" in p && p.popular;
             return (
               <Card
                 key={p.key}
-                className={isCurrent ? "border-primary" : ""}
+                className={`relative ${isCurrent ? "border-primary" : ""} ${isPopular ? "border-primary shadow-md" : ""}`}
               >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{p.name}</CardTitle>
                   <CardDescription>
@@ -244,6 +302,7 @@ function SettingsContent() {
                   ) : (
                     <Button
                       className="w-full"
+                      variant={isPopular ? "default" : "outline"}
                       onClick={() => handleSubscribe(p.priceId, p.key)}
                       disabled={loadingPlan === p.key}
                     >
@@ -261,7 +320,7 @@ function SettingsContent() {
       </div>
 
       {/* Top-up Packs */}
-      <div>
+      <div id="topup">
         <h2 className="text-xl font-semibold mb-4">Buy Credits</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {TOPUPS.map((pack, i) => (
@@ -324,18 +383,19 @@ function SettingsContent() {
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {new Date(tx.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3">
-                      {tx.description || "—"}
-                    </td>
+                    <td className="px-4 py-3">{tx.description || "—"}</td>
                     <td className="px-4 py-3">
                       <Badge variant="outline" className="capitalize text-xs">
                         {tx.type}
                       </Badge>
                     </td>
-                    <td className={`px-4 py-3 text-right font-medium ${
-                      tx.amount >= 0 ? "text-primary" : "text-destructive"
-                    }`}>
-                      {tx.amount >= 0 ? "+" : ""}{tx.amount}
+                    <td
+                      className={`px-4 py-3 text-right font-medium ${
+                        tx.amount >= 0 ? "text-primary" : "text-destructive"
+                      }`}
+                    >
+                      {tx.amount >= 0 ? "+" : ""}
+                      {tx.amount}
                     </td>
                     <td className="px-4 py-3 text-right text-muted-foreground">
                       {tx.balance_after}
@@ -351,7 +411,7 @@ function SettingsContent() {
   );
 }
 
-export default function SettingsPage() {
+export default function BillingPage() {
   return (
     <Suspense
       fallback={
@@ -360,7 +420,7 @@ export default function SettingsPage() {
         </div>
       }
     >
-      <SettingsContent />
+      <BillingContent />
     </Suspense>
   );
 }

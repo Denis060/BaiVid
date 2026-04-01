@@ -16,6 +16,7 @@ export const config = {
     "/scheduler/:path*",
     "/calendar/:path*",
     "/analytics/:path*",
+    "/billing/:path*",
     "/settings/:path*",
     "/auth/login",
     "/auth/signup",

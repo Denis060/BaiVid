@@ -29,10 +29,10 @@ export const PLANS = {
   starter: {
     name: "Starter",
     price: 12,
-    credits: 200,
+    credits: 500,
     priceId: process.env.STRIPE_PRICE_ID_STARTER || "",
     features: [
-      "200 credits/month",
+      "500 credits/month",
       "Faceless + Avatar videos",
       "1080p export",
       "No watermark",
@@ -42,10 +42,10 @@ export const PLANS = {
   pro: {
     name: "Pro",
     price: 29,
-    credits: 500,
+    credits: 1500,
     priceId: process.env.STRIPE_PRICE_ID_PRO || "",
     features: [
-      "500 credits/month",
+      "1,500 credits/month",
       "All video types",
       "4K export",
       "Autopilot mode",
@@ -56,10 +56,10 @@ export const PLANS = {
   agency: {
     name: "Agency",
     price: 79,
-    credits: 2000,
+    credits: 5000,
     priceId: process.env.STRIPE_PRICE_ID_AGENCY || "",
     features: [
-      "2,000 credits/month",
+      "5,000 credits/month",
       "All video types",
       "4K export",
       "Autopilot mode",
@@ -73,22 +73,34 @@ export const PLANS = {
 
 export const TOPUP_PACKS = [
   {
-    name: "Small Pack",
+    name: "Micro",
     credits: 100,
+    price: 2,
+    priceId: process.env.STRIPE_PRICE_ID_TOPUP_MICRO || "",
+  },
+  {
+    name: "Small",
+    credits: 300,
     price: 5,
     priceId: process.env.STRIPE_PRICE_ID_TOPUP_SMALL || "",
   },
   {
-    name: "Medium Pack",
-    credits: 350,
-    price: 15,
-    priceId: process.env.STRIPE_PRICE_ID_TOPUP_MEDIUM || "",
+    name: "Standard",
+    credits: 800,
+    price: 12,
+    priceId: process.env.STRIPE_PRICE_ID_TOPUP_STANDARD || "",
   },
   {
-    name: "Large Pack",
-    credits: 1000,
-    price: 40,
-    priceId: process.env.STRIPE_PRICE_ID_TOPUP_LARGE || "",
+    name: "Value",
+    credits: 2000,
+    price: 25,
+    priceId: process.env.STRIPE_PRICE_ID_TOPUP_VALUE || "",
+  },
+  {
+    name: "Pro",
+    credits: 6000,
+    price: 60,
+    priceId: process.env.STRIPE_PRICE_ID_TOPUP_PRO || "",
   },
 ] as const;
 

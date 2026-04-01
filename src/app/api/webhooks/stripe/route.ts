@@ -262,7 +262,7 @@ async function handlePaymentFailed(
   // Send payment failed email
   try {
     await getResend().emails.send({
-      from: "Baivid <billing@baivid.com>",
+      from: "Baivid <noreply@baivid.com>",
       to: user.email,
       subject: "Payment failed — please update your payment method",
       html: `
