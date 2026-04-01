@@ -1,14 +1,29 @@
-import { Sidebar } from "@/components/shared/sidebar";
+"use client";
+
+import { useState } from "react";
+import { Sidebar, MobileSidebar } from "@/components/shared/sidebar";
+import { Header } from "@/components/shared/header";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Desktop sidebar */}
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+      {/* Mobile sidebar */}
+      <MobileSidebar open={mobileOpen} onOpenChange={setMobileOpen} />
+
+      {/* Main content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+      </div>
     </div>
   );
 }
