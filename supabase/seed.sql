@@ -1,24 +1,44 @@
 -- ============================================================
 -- Seed data for local development
--- NOTE: In production, users are created via auth trigger.
--- For local dev, insert directly into public.users.
+-- NOTE: In production, users are created via the on_auth_user_created trigger.
+-- For seeding, we insert into auth.users first which triggers the public.users row,
+-- then update it to match our test data.
 -- ============================================================
 
--- Test user (use a known UUID for local testing)
-INSERT INTO public.users (id, email, full_name, plan, credits_balance, onboarding_completed)
+-- Create test user in auth.users (triggers on_auth_user_created → public.users + email_preferences)
+INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_user_meta_data, created_at, updated_at, aud, role)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000000',
   'test@baivid.com',
-  'Test User',
-  'pro',
-  500,
-  true
+  crypt('password123', gen_salt('bf')),
+  now(),
+  '{"full_name": "Test User"}'::jsonb,
+  now(),
+  now(),
+  'authenticated',
+  'authenticated'
 ) ON CONFLICT (id) DO NOTHING;
 
--- Email preferences for test user
-INSERT INTO public.email_preferences (user_id)
-VALUES ('00000000-0000-0000-0000-000000000001')
-ON CONFLICT (user_id) DO NOTHING;
+-- Also insert the identity so login works
+INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
+VALUES (
+  gen_random_uuid(),
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  'email',
+  '{"sub": "00000000-0000-0000-0000-000000000001", "email": "test@baivid.com"}'::jsonb,
+  now(),
+  now(),
+  now()
+) ON CONFLICT DO NOTHING;
+
+-- Update the trigger-created user row with test data (Pro plan, 500 credits)
+UPDATE public.users SET
+  plan = 'pro',
+  credits_balance = 500,
+  onboarding_completed = true
+WHERE id = '00000000-0000-0000-0000-000000000001';
 
 -- Subscription
 INSERT INTO public.subscriptions (user_id, stripe_subscription_id, stripe_price_id, plan, status, current_period_start, current_period_end)
@@ -83,19 +103,23 @@ INSERT INTO public.avatars (user_id, name, did_avatar_id, is_default) VALUES
   ('00000000-0000-0000-0000-000000000001', 'Casual Avatar', 'josh-o2gPQJSUVs', false);
 
 -- Autopilot profile
-INSERT INTO public.autopilot_profiles (id, user_id, name, niche, tone, video_type, target_platforms, posting_frequency, is_active, requires_approval, max_credits_per_run)
-VALUES (
-  '00000000-0000-0000-0000-000000000020',
-  '00000000-0000-0000-0000-000000000001',
-  'Tech Channel Autopilot',
-  'technology',
-  'energetic',
-  'faceless',
-  ARRAY['youtube', 'tiktok']::platform_type[],
-  'daily',
-  true,
-  15
-);
+DO $$
+BEGIN
+  INSERT INTO public.autopilot_profiles (id, user_id, name, niche, tone, video_type, target_platforms, posting_frequency, is_active, requires_approval, max_credits_per_run)
+  VALUES (
+    '00000000-0000-0000-0000-000000000020',
+    '00000000-0000-0000-0000-000000000001',
+    'Tech Channel Autopilot',
+    'technology',
+    'energetic',
+    'faceless',
+    ARRAY['youtube'::platform_type, 'tiktok'::platform_type],
+    'daily',
+    true,
+    true,
+    15
+  );
+END $$;
 
 -- Connected account
 INSERT INTO public.connected_accounts (user_id, platform, platform_user_id, platform_username, access_token)

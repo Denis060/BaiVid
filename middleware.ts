@@ -17,6 +17,10 @@ export const config = {
     "/calendar/:path*",
     "/analytics/:path*",
     "/settings/:path*",
-    "/auth/:path*",
+    "/auth/login",
+    "/auth/signup",
+    "/auth/callback",
+    "/auth/forgot-password",
+    "/auth/reset-password",
   ],
 };

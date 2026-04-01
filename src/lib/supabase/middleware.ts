@@ -51,10 +51,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage =
     pathname.startsWith("/auth/login") || pathname.startsWith("/auth/signup");
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login, preserving intended destination
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
