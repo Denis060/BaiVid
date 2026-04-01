@@ -7,7 +7,11 @@
       "Bash(mv baivid/* baivid/.* .)",
       "Bash(rmdir baivid:*)",
       "Bash(npx shadcn@latest init -d --base-color neutral --css-variables --style default)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add avatar badge card dialog dropdown-menu input label scroll-area separator sheet skeleton tabs textarea tooltip select progress popover calendar command -y)",
+      "Bash(gh auth:*)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")"
     ]
   }
 }
