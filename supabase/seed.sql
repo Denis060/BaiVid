@@ -94,8 +94,8 @@ INSERT INTO public.videos (user_id, title, description, type, status, script_id,
 
 -- Voice profiles
 INSERT INTO public.voice_profiles (user_id, name, provider, provider_voice_id, language, is_default) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'Professional Male', 'elevenlabs', 'pNInz6obpgDQGcFmaJgB', 'en', true),
-  ('00000000-0000-0000-0000-000000000001', 'Friendly Female', 'elevenlabs', '21m00Tcm4TlvDq8ikWAM', 'en', false);
+  ('00000000-0000-0000-0000-000000000001', 'Professional Male', 'fish_audio', 'pNInz6obpgDQGcFmaJgB', 'en', true),
+  ('00000000-0000-0000-0000-000000000001', 'Friendly Female', 'fish_audio', '21m00Tcm4TlvDq8ikWAM', 'en', false);
 
 -- Avatars
 INSERT INTO public.avatars (user_id, name, did_avatar_id, is_default) VALUES

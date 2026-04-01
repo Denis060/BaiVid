@@ -17,6 +17,7 @@ export type AnalyticsSnapshot = Tables<"analytics_snapshots">;
 export type AutopilotProfile = Tables<"autopilot_profiles">;
 export type AutopilotRun = Tables<"autopilot_runs">;
 export type AutopilotApproval = Tables<"autopilot_approvals">;
+export type AutopilotSettings = Tables<"autopilot_settings">;
 export type EmailLog = Tables<"email_logs">;
 export type EmailPreferences = Tables<"email_preferences">;
 

@@ -154,6 +154,11 @@ export type Database = {
           credits_used: number;
           metadata: Json;
           error_message: string | null;
+          art_style: string | null;
+          model_used: string | null;
+          aspect_ratio: string | null;
+          is_autopilot: boolean;
+          autopilot_run_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -171,6 +176,11 @@ export type Database = {
           credits_used?: number;
           metadata?: Json;
           error_message?: string | null;
+          art_style?: string | null;
+          model_used?: string | null;
+          aspect_ratio?: string | null;
+          is_autopilot?: boolean;
+          autopilot_run_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -188,6 +198,11 @@ export type Database = {
           credits_used?: number;
           metadata?: Json;
           error_message?: string | null;
+          art_style?: string | null;
+          model_used?: string | null;
+          aspect_ratio?: string | null;
+          is_autopilot?: boolean;
+          autopilot_run_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -204,6 +219,13 @@ export type Database = {
             columns: ["script_id"];
             isOneToOne: false;
             referencedRelation: "scripts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "videos_autopilot_run_id_fkey";
+            columns: ["autopilot_run_id"];
+            isOneToOne: false;
+            referencedRelation: "autopilot_runs";
             referencedColumns: ["id"];
           },
         ];
@@ -580,6 +602,16 @@ export type Database = {
           is_active: boolean;
           requires_approval: boolean;
           max_credits_per_run: number;
+          keywords: string[];
+          language: string;
+          category: string | null;
+          approval_mode: string;
+          auto_topup_enabled: boolean;
+          auto_topup_threshold: number;
+          post_times: Json;
+          video_format: string;
+          art_style: string;
+          duration_pref: string;
           created_at: string;
           updated_at: string;
         };
@@ -597,6 +629,16 @@ export type Database = {
           is_active?: boolean;
           requires_approval?: boolean;
           max_credits_per_run?: number;
+          keywords?: string[];
+          language?: string;
+          category?: string | null;
+          approval_mode?: string;
+          auto_topup_enabled?: boolean;
+          auto_topup_threshold?: number;
+          post_times?: Json;
+          video_format?: string;
+          art_style?: string;
+          duration_pref?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -614,6 +656,16 @@ export type Database = {
           is_active?: boolean;
           requires_approval?: boolean;
           max_credits_per_run?: number;
+          keywords?: string[];
+          language?: string;
+          category?: string | null;
+          approval_mode?: string;
+          auto_topup_enabled?: boolean;
+          auto_topup_threshold?: number;
+          post_times?: Json;
+          video_format?: string;
+          art_style?: string;
+          duration_pref?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -654,6 +706,8 @@ export type Database = {
           error_message: string | null;
           started_at: string;
           completed_at: string | null;
+          run_date: string;
+          platforms_posted: string[];
         };
         Insert: {
           id?: string;
@@ -667,6 +721,8 @@ export type Database = {
           error_message?: string | null;
           started_at?: string;
           completed_at?: string | null;
+          run_date?: string;
+          platforms_posted?: string[];
         };
         Update: {
           id?: string;
@@ -680,6 +736,8 @@ export type Database = {
           error_message?: string | null;
           started_at?: string;
           completed_at?: string | null;
+          run_date?: string;
+          platforms_posted?: string[];
         };
         Relationships: [
           {
@@ -729,6 +787,8 @@ export type Database = {
           status: Database["public"]["Enums"]["approval_status"];
           feedback: string | null;
           decided_at: string | null;
+          token: string | null;
+          expires_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -740,6 +800,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["approval_status"];
           feedback?: string | null;
           decided_at?: string | null;
+          token?: string | null;
+          expires_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -751,6 +813,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["approval_status"];
           feedback?: string | null;
           decided_at?: string | null;
+          token?: string | null;
+          expires_at?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -855,6 +919,65 @@ export type Database = {
           },
         ];
       };
+      autopilot_settings: {
+        Row: {
+          id: string;
+          user_id: string;
+          platforms: string[];
+          frequency: string;
+          post_times: Json;
+          video_type: string;
+          art_style: string;
+          voice_id: string | null;
+          duration_pref: string;
+          approval_mode: string;
+          auto_topup_enabled: boolean;
+          auto_topup_threshold: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          platforms?: string[];
+          frequency?: string;
+          post_times?: Json;
+          video_type?: string;
+          art_style?: string;
+          voice_id?: string | null;
+          duration_pref?: string;
+          approval_mode?: string;
+          auto_topup_enabled?: boolean;
+          auto_topup_threshold?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          platforms?: string[];
+          frequency?: string;
+          post_times?: Json;
+          video_type?: string;
+          art_style?: string;
+          voice_id?: string | null;
+          duration_pref?: string;
+          approval_mode?: string;
+          auto_topup_enabled?: boolean;
+          auto_topup_threshold?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "autopilot_settings_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -863,7 +986,7 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      plan_type: "free" | "starter" | "pro" | "business";
+      plan_type: "free" | "starter" | "pro" | "agency";
       video_status:
         | "draft"
         | "scripting"
@@ -871,7 +994,7 @@ export type Database = {
         | "processing"
         | "completed"
         | "failed";
-      video_type: "faceless" | "avatar";
+      video_type: "faceless" | "avatar" | "audio" | "url" | "scenes";
       idea_status: "new" | "scripted" | "produced" | "archived";
       credit_type: "purchase" | "usage" | "bonus" | "refund" | "subscription";
       post_status:
@@ -885,7 +1008,11 @@ export type Database = {
         | "tiktok"
         | "instagram"
         | "twitter"
-        | "linkedin";
+        | "linkedin"
+        | "facebook"
+        | "pinterest"
+        | "reddit"
+        | "threads";
       autopilot_status: "running" | "paused" | "completed" | "failed";
       approval_status: "pending" | "approved" | "rejected";
       email_type:
@@ -894,7 +1021,23 @@ export type Database = {
         | "credits_low"
         | "subscription_change"
         | "weekly_digest"
-        | "autopilot_approval";
+        | "autopilot_approval"
+        | "idea_generated"
+        | "video_posted"
+        | "video_failed"
+        | "approval_reminder"
+        | "credits_critical"
+        | "credits_exhausted"
+        | "credits_topped_up"
+        | "credits_monthly_refresh"
+        | "autopilot_activated"
+        | "autopilot_paused"
+        | "autopilot_resumed"
+        | "account_reconnect"
+        | "plan_upgraded"
+        | "plan_downgraded"
+        | "payment_failed"
+        | "milestone_reached";
     };
     CompositeTypes: {
       [_ in never]: never;
