@@ -152,28 +152,6 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
 }
 
 /**
- * Get user's videos.
- */
-export async function getUserVideos(page: number = 1, limit: number = 20) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { videos: [], count: 0 };
-
-  const offset = (page - 1) * limit;
-
-  const { data, count } = await supabase
-    .from("videos")
-    .select("*", { count: "exact" })
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  return { videos: data || [], count: count || 0 };
-}
-
-/**
  * Delete a video.
  */
 export async function deleteVideo(videoId: string) {
