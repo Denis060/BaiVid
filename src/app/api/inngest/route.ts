@@ -9,6 +9,7 @@ import {
 } from "@/inngest/autopilot";
 import { weeklySummaryFunction } from "@/inngest/weekly-summary";
 import { publishScheduledPost } from "@/inngest/scheduler";
+import { analyticsSnapshotCron } from "@/inngest/analytics-snapshot";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -20,5 +21,6 @@ export const { GET, POST, PUT } = serve({
     autopilotApprovalDecision,
     weeklySummaryFunction,
     publishScheduledPost,
+    analyticsSnapshotCron,
   ],
 });
