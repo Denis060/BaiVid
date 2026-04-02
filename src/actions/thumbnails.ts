@@ -111,7 +111,12 @@ export async function generateThumbnails(input: {
   }
 
   if (thumbnails.length === 0) {
-    return { error: "Failed to generate thumbnails. Please try again." };
+    const hasFlux = !!process.env.HUGGINGFACE_API_KEY;
+    const hasIdeogram = !!process.env.REPLICATE_API_KEY;
+    if (!hasFlux && !hasIdeogram) {
+      return { error: "No image generation API key configured. Add HUGGINGFACE_API_KEY or REPLICATE_API_KEY." };
+    }
+    return { error: "Failed to generate thumbnails. The image API may be rate-limited — try again in a minute." };
   }
 
   // Deduct 1 credit
