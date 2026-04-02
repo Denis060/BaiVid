@@ -2,6 +2,8 @@ import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest";
 import { facelessVideoFunction } from "@/inngest/faceless-video";
 import { avatarVideoFunction } from "@/inngest/avatar-video";
+import { audioVideoFunction } from "@/inngest/audio-video";
+import { urlVideoFunction } from "@/inngest/url-video";
 import {
   autopilotDailyCron,
   autopilotRunForUser,
@@ -17,6 +19,8 @@ export const { GET, POST, PUT } = serve({
   functions: [
     facelessVideoFunction,
     avatarVideoFunction,
+    audioVideoFunction,
+    urlVideoFunction,
     autopilotDailyCron,
     autopilotRunForUser,
     autopilotApprovalDecision,

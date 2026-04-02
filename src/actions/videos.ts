@@ -151,6 +151,143 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
   redirect("/videos");
 }
 
+// ========================================
+// Audio to Video
+// ========================================
+
+export interface CreateAudioVideoInput {
+  title: string;
+  audioUrl: string;
+  artStyle: string;
+  aspectRatio: "16:9" | "9:16" | "1:1";
+  durationSeconds: number;
+}
+
+export async function createAudioVideo(input: CreateAudioVideoInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const durationMinutes = Math.max(1, Math.ceil(input.durationSeconds / 60));
+  const creditCost = 12 * durationMinutes;
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("credits_balance")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.credits_balance < creditCost) {
+    return { error: `Insufficient credits. Need ${creditCost}, have ${profile?.credits_balance || 0}.` };
+  }
+
+  const { data: video, error: insertError } = await supabase
+    .from("videos")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      type: "audio",
+      status: "draft",
+      art_style: input.artStyle,
+      aspect_ratio: input.aspectRatio,
+      credits_used: creditCost,
+      metadata: { audioUrl: input.audioUrl, targetDuration: input.durationSeconds },
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !video) return { error: "Failed to create video record" };
+
+  await inngest.send({
+    name: "video/create-audio",
+    data: {
+      videoId: video.id,
+      userId: user.id,
+      audioUrl: input.audioUrl,
+      artStyle: input.artStyle,
+      aspectRatio: input.aspectRatio,
+      durationSeconds: input.durationSeconds,
+    },
+  });
+
+  redirect("/videos");
+}
+
+// ========================================
+// URL to Video
+// ========================================
+
+export interface CreateUrlVideoInput {
+  title: string;
+  url: string;
+  content: string;
+  artStyle: string;
+  aspectRatio: "16:9" | "9:16" | "1:1";
+  duration: number;
+}
+
+export async function createUrlVideo(input: CreateUrlVideoInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const creditCost = 18;
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("credits_balance")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.credits_balance < creditCost) {
+    return { error: `Insufficient credits. Need ${creditCost}, have ${profile?.credits_balance || 0}.` };
+  }
+
+  const { data: video, error: insertError } = await supabase
+    .from("videos")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      type: "url",
+      status: "draft",
+      art_style: input.artStyle,
+      aspect_ratio: input.aspectRatio,
+      credits_used: creditCost,
+      metadata: { sourceUrl: input.url, content: input.content, targetDuration: input.duration },
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !video) return { error: "Failed to create video record" };
+
+  await inngest.send({
+    name: "video/create-url",
+    data: {
+      videoId: video.id,
+      userId: user.id,
+      title: input.title,
+      content: input.content,
+      artStyle: input.artStyle,
+      aspectRatio: input.aspectRatio,
+      duration: input.duration,
+    },
+  });
+
+  redirect("/videos");
+}
+
+/**
+ * Scrape a URL and return extracted content.
+ */
+export async function fetchUrlContent(url: string) {
+  const { scrapeUrl } = await import("@/lib/scraper");
+  try {
+    return await scrapeUrl(url);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Failed to fetch URL" };
+  }
+}
+
 /**
  * Delete a video.
  */
