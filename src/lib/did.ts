@@ -15,6 +15,7 @@ function getHeaders() {
 
 /**
  * Create a D-ID actor from a photo and optional voice sample.
+ * Returns the actor_id for reuse across videos.
  */
 export async function createActor(
   photoUrl: string,
@@ -49,17 +50,17 @@ export async function createActor(
 export type AvatarStyle = "solo_host" | "interview" | "news_anchor" | "storyteller";
 
 /**
- * Generate a talking avatar video using D-ID.
+ * Submit a D-ID talk creation request. Returns talkId for polling.
+ * Does NOT poll — use `getTalkStatus()` separately with Inngest step.sleep().
  */
-export async function generateAvatarVideo(input: {
+export async function submitTalk(input: {
   actorId?: string;
   photoUrl?: string;
   script: string;
   voiceId?: string;
   voiceSampleUrl?: string;
   style?: AvatarStyle;
-}): Promise<{ videoUrl: string; talkId: string }> {
-  // Build voice config
+}): Promise<string> {
   let voice: Record<string, unknown>;
   if (input.voiceSampleUrl) {
     voice = { type: "audio", audio_url: input.voiceSampleUrl };
@@ -70,7 +71,6 @@ export async function generateAvatarVideo(input: {
     };
   }
 
-  // Build driver config based on style
   const driverConfig = getDriverConfig(input.style);
 
   const body: Record<string, unknown> = {
@@ -85,7 +85,6 @@ export async function generateAvatarVideo(input: {
     },
   };
 
-  // Use actor or direct photo
   if (input.actorId) {
     body.actor_id = input.actorId;
   } else if (input.photoUrl) {
@@ -102,44 +101,43 @@ export async function generateAvatarVideo(input: {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`D-ID generate video failed (${res.status}): ${errText}`);
+    throw new Error(`D-ID submit talk failed (${res.status}): ${errText}`);
   }
 
   const data = await res.json();
-  const talkId = data.id;
-  if (!talkId) throw new Error("No talk_id from D-ID");
-
-  // Poll for completion
-  const videoUrl = await pollDIDTalk(talkId);
-  return { videoUrl, talkId };
+  if (!data.id) throw new Error("No talk_id from D-ID");
+  return data.id;
 }
 
-async function pollDIDTalk(
-  talkId: string,
-  maxAttempts = 120,
-  intervalMs = 5000
-): Promise<string> {
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((r) => setTimeout(r, intervalMs));
+/**
+ * Check the status of a D-ID talk.
+ * Returns { status, videoUrl } — use with Inngest step.sleep() polling pattern.
+ */
+export async function getTalkStatus(
+  talkId: string
+): Promise<{ status: "pending" | "done" | "error"; videoUrl?: string; error?: string }> {
+  const res = await fetch(`${DID_API_URL}/talks/${talkId}`, {
+    headers: getHeaders(),
+  });
 
-    const res = await fetch(`${DID_API_URL}/talks/${talkId}`, {
-      headers: getHeaders(),
-    });
-
-    if (!res.ok) continue;
-
-    const data = await res.json();
-
-    if (data.status === "done" && data.result_url) {
-      return data.result_url;
-    }
-
-    if (data.status === "error" || data.status === "rejected") {
-      throw new Error(`D-ID talk failed: ${data.error?.description || "unknown"}`);
-    }
+  if (!res.ok) {
+    return { status: "pending" };
   }
 
-  throw new Error("D-ID talk timed out");
+  const data = await res.json();
+
+  if (data.status === "done" && data.result_url) {
+    return { status: "done", videoUrl: data.result_url };
+  }
+
+  if (data.status === "error" || data.status === "rejected") {
+    return {
+      status: "error",
+      error: data.error?.description || "D-ID generation failed",
+    };
+  }
+
+  return { status: "pending" };
 }
 
 function getDriverConfig(style?: AvatarStyle): Record<string, unknown> {

@@ -1,6 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
-import { generateAvatarVideo, type AvatarStyle } from "@/lib/did";
+import { createActor, submitTalk, getTalkStatus, type AvatarStyle } from "@/lib/did";
 import type { Database } from "@/types/supabase";
 
 function getServiceClient() {
@@ -35,7 +35,7 @@ export const avatarVideoFunction = inngest.createFunction(
 
     const supabase = getServiceClient();
 
-    // Update status
+    // Update status to generating
     await step.run("update-status-generating", async () => {
       await supabase
         .from("videos")
@@ -43,10 +43,37 @@ export const avatarVideoFunction = inngest.createFunction(
         .eq("id", videoId);
     });
 
-    // Generate avatar video via D-ID
-    const didResult = await step.run("generate-did-video", async () => {
-      return await generateAvatarVideo({
-        photoUrl,
+    // Step 1: Create D-ID actor for reuse
+    const actorId = await step.run("create-actor", async () => {
+      try {
+        return await createActor(photoUrl, voiceSampleUrl);
+      } catch (err) {
+        // Actor creation is optional — fall back to direct photoUrl
+        console.warn("Actor creation failed, using photoUrl directly:", err);
+        return null;
+      }
+    });
+
+    // Step 2: Save actor to avatars table for reuse
+    if (actorId) {
+      await step.run("save-actor", async () => {
+        await supabase.from("avatars").upsert(
+          {
+            user_id: userId,
+            name: `Avatar ${new Date().toLocaleDateString()}`,
+            did_avatar_id: actorId,
+            is_default: false,
+          },
+          { onConflict: "did_avatar_id" }
+        );
+      });
+    }
+
+    // Step 3: Submit D-ID talk (does NOT poll — returns talkId immediately)
+    const talkId = await step.run("submit-did-talk", async () => {
+      return await submitTalk({
+        actorId: actorId || undefined,
+        photoUrl: actorId ? undefined : photoUrl,
         script,
         voiceSampleUrl,
         voiceId,
@@ -54,9 +81,54 @@ export const avatarVideoFunction = inngest.createFunction(
       });
     });
 
-    // Download and re-upload to Supabase Storage
+    // Step 4: Poll for D-ID completion using step.sleep() pattern
+    let videoUrl: string | undefined;
+
+    for (let attempt = 0; attempt < 120; attempt++) {
+      await step.sleep(`poll-did-${attempt}`, "5s");
+
+      const status = await step.run(`check-did-status-${attempt}`, async () => {
+        return await getTalkStatus(talkId);
+      });
+
+      if (status.status === "done" && status.videoUrl) {
+        videoUrl = status.videoUrl;
+        break;
+      }
+
+      if (status.status === "error") {
+        // Mark video as failed and exit
+        await step.run("mark-failed", async () => {
+          await supabase
+            .from("videos")
+            .update({
+              status: "failed",
+              error_message: status.error || "D-ID generation failed",
+              model_used: "d-id",
+            })
+            .eq("id", videoId);
+        });
+        return { videoId, status: "failed", error: status.error };
+      }
+    }
+
+    if (!videoUrl) {
+      await step.run("mark-timeout", async () => {
+        await supabase
+          .from("videos")
+          .update({
+            status: "failed",
+            error_message: "D-ID generation timed out after 10 minutes",
+            model_used: "d-id",
+          })
+          .eq("id", videoId);
+      });
+      return { videoId, status: "failed", error: "Timed out" };
+    }
+
+    // Step 5: Download and re-upload to Supabase Storage
     const storageUrl = await step.run("upload-to-storage", async () => {
-      const res = await fetch(didResult.videoUrl);
+      const res = await fetch(videoUrl!);
       if (!res.ok) throw new Error("Failed to download D-ID video");
 
       const buffer = Buffer.from(await res.arrayBuffer());
@@ -78,7 +150,7 @@ export const avatarVideoFunction = inngest.createFunction(
       return publicUrl.publicUrl;
     });
 
-    // Update video record
+    // Step 6: Update video record
     await step.run("update-video-record", async () => {
       await supabase
         .from("videos")
@@ -91,7 +163,7 @@ export const avatarVideoFunction = inngest.createFunction(
         .eq("id", videoId);
     });
 
-    // Deduct credits (20 per minute)
+    // Step 7: Deduct credits (20 per minute)
     await step.run("deduct-credits", async () => {
       const durationMinutes = Math.max(1, Math.ceil(duration / 60));
       const creditCost = 20 * durationMinutes;
@@ -120,6 +192,6 @@ export const avatarVideoFunction = inngest.createFunction(
       }
     });
 
-    return { videoId, status: "completed" };
+    return { videoId, status: "completed", actorId };
   }
 );
