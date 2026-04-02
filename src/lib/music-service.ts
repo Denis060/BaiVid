@@ -263,6 +263,13 @@ async function searchFreeSound(
   }
 }
 
+/**
+ * Get the curated preset tracks. Used as fallback when no API keys are set.
+ */
+export async function getPresetTracks(): Promise<MusicTrack[]> {
+  return PRESET_TRACKS;
+}
+
 export async function searchMusic(
   params: MusicSearchParams
 ): Promise<{ tracks: MusicTrack[]; total: number }> {
@@ -272,7 +279,7 @@ export async function searchMusic(
       const { searchPixabayMusic } = await import("@/lib/providers/stock-footage");
       const pixabayTracks = await searchPixabayMusic(params.query, params.perPage || 20);
       if (pixabayTracks.length > 0) {
-        const mapped: MusicTrack[] = pixabayTracks.map((t) => ({
+        const mapped: MusicTrack[] = pixabayTracks.map((t: { id: number; title: string; duration: number; url: string; artist: string; tags: string }) => ({
           id: `pixabay-music-${t.id}`,
           title: t.title,
           artist: t.artist,
@@ -332,8 +339,8 @@ export async function searchMusic(
   let filtered = PRESET_TRACKS.filter(
     (t) =>
       t.title.toLowerCase().includes(query) ||
-      t.artist.toLowerCase().includes(query) ||
-      t.tags?.some((tag) => tag.toLowerCase().includes(query))
+      t.genre.toLowerCase().includes(query) ||
+      (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(query)))
   );
 
   if (params.genre && params.genre !== "All") {
@@ -350,17 +357,8 @@ export async function searchMusic(
     filtered = filtered.filter((t) => t.duration <= params.maxDuration!);
   }
 
-  const page = params.page || 1;
-  const perPage = params.perPage || 20;
-  const start = (page - 1) * perPage;
-  const end = start + perPage;
-
   return {
-    tracks: filtered.slice(start, end),
+    tracks: filtered,
     total: filtered.length,
   };
-}
-
-export async function getPresetTracks(): Promise<MusicTrack[]> {
-  return PRESET_TRACKS;
 }

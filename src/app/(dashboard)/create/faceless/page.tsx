@@ -37,8 +37,18 @@ import {
 import { createFacelessVideo } from "@/actions/videos";
 import { getUserScripts } from "@/actions/scripts";
 import { useCreditsStore } from "@/stores/credits-store";
+import { GOOGLE_TTS_VOICES, type GoogleTTSVoice } from "@/lib/providers/google-tts";
 import { FISH_AUDIO_PRESETS } from "@/lib/providers/fish-audio";
 import type { Script } from "@/types";
+
+const VOICE_LANGUAGE_TABS = [
+  { code: "en", label: "English", flag: "🇺🇸🇬🇧" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "ar", label: "Arabic", flag: "🇸🇦" },
+  { code: "yo", label: "Yoruba", flag: "🇳🇬" },
+  { code: "sw", label: "Swahili", flag: "🇹🇿" },
+  { code: "af", label: "Afrikaans", flag: "🇿🇦" },
+];
 
 const STEPS = [
   { label: "Script", icon: FileText },
@@ -79,7 +89,8 @@ export default function FacelessCreatePage() {
   const [title, setTitle] = useState("");
   const [script, setScript] = useState("");
   const [artStyle, setArtStyle] = useState("cinematic");
-  const [voiceId, setVoiceId] = useState<string>(FISH_AUDIO_PRESETS[0].id);
+  const [voiceId, setVoiceId] = useState<string>("google-en-male-1");
+  const [voiceLangTab, setVoiceLangTab] = useState("en");
   const [duration, setDuration] = useState(60);
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
 
@@ -288,33 +299,80 @@ export default function FacelessCreatePage() {
               Select a voice for the AI narration.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-2">
-              {FISH_AUDIO_PRESETS.map((voice) => (
+          <CardContent className="space-y-4">
+            {/* African voices banner */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm">
+              <span className="font-medium">🌍 Baivid exclusive:</span>{" "}
+              <span className="text-muted-foreground">African language voices — Yoruba, Swahili &amp; Afrikaans</span>
+            </div>
+
+            {/* Language tabs */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+              {VOICE_LANGUAGE_TABS.map((tab) => (
                 <button
-                  key={voice.id}
+                  key={tab.code}
                   type="button"
-                  onClick={() => setVoiceId(voice.id)}
-                  className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
-                    voiceId === voice.id
-                      ? "border-primary bg-primary/10 ring-1 ring-primary"
-                      : "border-border hover:border-primary/50"
+                  onClick={() => setVoiceLangTab(tab.code)}
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                    voiceLangTab === tab.code
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                    <Mic className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{voice.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {voice.language === "en" ? "English" : voice.language}
-                    </p>
-                  </div>
-                  {voiceId === voice.id && (
-                    <CheckCircle className="ml-auto h-4 w-4 text-primary" />
-                  )}
+                  <span>{tab.flag}</span>
+                  <span>{tab.label}</span>
                 </button>
               ))}
+            </div>
+
+            {/* Google TTS voices for selected language */}
+            <div className="grid gap-2">
+              {GOOGLE_TTS_VOICES
+                .filter((v) => v.languageCode.startsWith(voiceLangTab))
+                .map((voice) => (
+                  <button
+                    key={voice.id}
+                    type="button"
+                    onClick={() => setVoiceId(voice.id)}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                      voiceId === voice.id
+                        ? "border-primary bg-primary/10 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-lg shrink-0">
+                      {voice.flag}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{voice.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-muted-foreground">{voice.language}</span>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {voice.gender === "MALE" ? "Male" : "Female"}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 ${
+                            voice.tier === "neural2"
+                              ? "border-primary/30 text-primary"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {voice.tier === "neural2" ? "Neural2" : "Standard"}
+                        </Badge>
+                      </div>
+                    </div>
+                    {voiceId === voice.id && (
+                      <CheckCircle className="ml-auto h-5 w-5 text-primary shrink-0" />
+                    )}
+                  </button>
+                ))}
+
+              {GOOGLE_TTS_VOICES.filter((v) => v.languageCode.startsWith(voiceLangTab)).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No voices available for this language yet.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -414,7 +472,9 @@ export default function FacelessCreatePage() {
               <div className="flex justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Voice</span>
                 <span className="font-medium">
-                  {FISH_AUDIO_PRESETS.find((v) => v.id === voiceId)?.name}
+                  {GOOGLE_TTS_VOICES.find((v) => v.id === voiceId)?.name ||
+                    FISH_AUDIO_PRESETS.find((v) => v.id === voiceId)?.name ||
+                    voiceId}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">

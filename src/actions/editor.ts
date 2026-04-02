@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { inngest } from "@/lib/inngest";
 import type { EditInstruction } from "@/lib/editor-types";
+import { getPresetTracks, type MusicTrack } from "@/lib/music-service";
 
 export async function getVideoForEditor(videoId: string) {
   const supabase = await createClient();
@@ -70,17 +71,13 @@ export async function submitRerender(
 }
 
 export async function getMusicLibrary() {
-  // Return preset music tracks
-  return [
-    { id: "upbeat-1", name: "Upbeat Corporate", genre: "Corporate", duration: 120, url: "" },
-    { id: "chill-1", name: "Lo-fi Chill", genre: "Lo-fi", duration: 180, url: "" },
-    { id: "epic-1", name: "Epic Cinematic", genre: "Cinematic", duration: 150, url: "" },
-    { id: "funk-1", name: "Funky Groove", genre: "Funk", duration: 90, url: "" },
-    { id: "ambient-1", name: "Ambient Calm", genre: "Ambient", duration: 240, url: "" },
-    { id: "hiphop-1", name: "Hip Hop Beat", genre: "Hip Hop", duration: 120, url: "" },
-    { id: "afro-1", name: "Afrobeats Vibe", genre: "Afrobeats", duration: 150, url: "" },
-    { id: "edm-1", name: "EDM Drop", genre: "Electronic", duration: 120, url: "" },
-    { id: "acoustic-1", name: "Acoustic Guitar", genre: "Acoustic", duration: 180, url: "" },
-    { id: "jazz-1", name: "Smooth Jazz", genre: "Jazz", duration: 200, url: "" },
-  ];
+  // Return preset music tracks from the music service
+  const presetTracks = await getPresetTracks();
+  return presetTracks.map((track: MusicTrack) => ({
+    id: track.id,
+    name: track.title,
+    genre: track.genre,
+    duration: track.duration,
+    url: track.downloadUrl,
+  }));
 }

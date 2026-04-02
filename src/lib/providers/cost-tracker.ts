@@ -32,6 +32,9 @@ export const PROVIDER_COSTS: Record<string, number> = {
   pexels: 0,
   pixabay: 0,
   // TTS
+  "google-tts-free": 0,
+  "google-tts-standard": 0.000004, // per character for Standard voices
+  "google-tts-neural2": 0.000016, // per character for Neural2 voices
   "fish-audio-free": 0,
   "fish-audio-paid": 0.01,
   "qwen3-tts": 0.005,
@@ -94,6 +97,7 @@ export async function getFreeTierUsage(
 // Daily free limits per provider
 export const FREE_DAILY_LIMITS: Record<string, number> = {
   "kling-free": 10,
+  "google-tts-free": 33333, // ~1M chars / 30 days = 33,333 chars/day
   "fish-audio-free": 50,
   "flux-hf": 20,
   "gemini-flash": 100,

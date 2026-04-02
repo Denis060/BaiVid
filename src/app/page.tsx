@@ -16,6 +16,9 @@ import {
   ArrowRight,
   ExternalLink,
   MessageCircle,
+  Shield,
+  HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import { LandingNav } from "@/components/shared/landing-nav";
 
@@ -170,6 +173,109 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* How It Works */}
+      <section id="how-it-works" className="py-20 sm:py-28 bg-muted/30 scroll-mt-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              How it works: <span className="text-primary">4 simple steps</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">From discovering ideas to publishing across all platforms.</p>
+          </div>
+
+          {/* Desktop: Horizontal layout */}
+          <div className="hidden sm:grid sm:grid-cols-4 gap-6 mb-12">
+            {[
+              {
+                step: 1,
+                icon: Lightbulb,
+                title: "Discover Ideas",
+                desc: "Enter your niche. Baivid finds trending topics using Google Trends + AI analysis. Pick the ones with highest virality scores."
+              },
+              {
+                step: 2,
+                icon: FileText,
+                title: "Generate Script",
+                desc: "One click turns any idea into a hook-body-CTA script. Choose tone, duration, and style — AI handles the rest."
+              },
+              {
+                step: 3,
+                icon: Video,
+                title: "Create Video",
+                desc: "Pick faceless or avatar mode. Select art style and voice. Baivid generates scenes, voiceover, and captions automatically."
+              },
+              {
+                step: 4,
+                icon: Send,
+                title: "Publish Everywhere",
+                desc: "Schedule or publish instantly to YouTube, TikTok, Instagram, and 6 more platforms. Track performance from one dashboard."
+              }
+            ].map((item) => (
+              <div key={item.step} className="relative">
+                <div className="rounded-xl border border-border bg-card p-6 text-center h-full flex flex-col">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground mx-auto mb-4">
+                    {item.step}
+                  </div>
+                  <item.icon className="h-8 w-8 text-primary mx-auto mb-4" />
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground flex-grow">{item.desc}</p>
+                </div>
+                {item.step < 4 && (
+                  <div className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2">
+                    <ArrowRight className="h-6 w-6 text-primary/50" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: Vertical timeline */}
+          <div className="sm:hidden space-y-6">
+            {[
+              {
+                step: 1,
+                icon: Lightbulb,
+                title: "Discover Ideas",
+                desc: "Enter your niche. Baivid finds trending topics using Google Trends + AI analysis. Pick the ones with highest virality scores."
+              },
+              {
+                step: 2,
+                icon: FileText,
+                title: "Generate Script",
+                desc: "One click turns any idea into a hook-body-CTA script. Choose tone, duration, and style — AI handles the rest."
+              },
+              {
+                step: 3,
+                icon: Video,
+                title: "Create Video",
+                desc: "Pick faceless or avatar mode. Select art style and voice. Baivid generates scenes, voiceover, and captions automatically."
+              },
+              {
+                step: 4,
+                icon: Send,
+                title: "Publish Everywhere",
+                desc: "Schedule or publish instantly to YouTube, TikTok, Instagram, and 6 more platforms. Track performance from one dashboard."
+              }
+            ].map((item, idx) => (
+              <div key={item.step} className="relative">
+                {idx < 3 && (
+                  <div className="absolute left-5 top-16 h-12 w-0.5 bg-primary/30" />
+                )}
+                <div className="flex gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground flex-shrink-0 relative z-10">
+                    {item.step}
+                  </div>
+                  <div className="flex-grow pb-6">
+                    <h3 className="font-semibold text-lg">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{item.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Ownership Badge */}
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
@@ -185,6 +291,122 @@ export default function LandingPage() {
             Baivid&apos;s terms guarantee full ownership of every video, script,
             and thumbnail you create. Always.
           </p>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section id="comparison" className="py-20 sm:py-28 bg-muted/30 scroll-mt-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              Compare Baivid to the <span className="text-primary">competition</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">See why creators choose Baivid over Syllaby and ShortVidCast.</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left p-4 font-semibold text-sm">Feature</th>
+                  <th className="text-center p-4 font-semibold text-sm bg-primary/10">
+                    <div className="font-bold text-base">Baivid</div>
+                  </th>
+                  <th className="text-center p-4 font-semibold text-sm">Syllaby.io</th>
+                  <th className="text-center p-4 font-semibold text-sm">ShortVidCast</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {
+                    feature: "Starting Price",
+                    baivid: "$12/mo",
+                    syllaby: "$49/mo",
+                    shortvidcast: "$29/mo",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Free Plan",
+                    baivid: "Yes (50 credits)",
+                    syllaby: "No",
+                    shortvidcast: "Limited",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Autopilot Mode",
+                    baivid: "Yes (daily)",
+                    syllaby: "Manual only",
+                    shortvidcast: "No",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Platforms Supported",
+                    baivid: "9",
+                    syllaby: "4",
+                    shortvidcast: "3",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Avatar Videos",
+                    baivid: "Yes",
+                    syllaby: "Yes",
+                    shortvidcast: "No",
+                    baividWins: false
+                  },
+                  {
+                    feature: "Content Ownership",
+                    baivid: "100% yours",
+                    syllaby: "They claim rights",
+                    shortvidcast: "Shared",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Email After Every Post",
+                    baivid: "Yes",
+                    syllaby: "No",
+                    shortvidcast: "No",
+                    baividWins: true
+                  },
+                  {
+                    feature: "African Voices & Art",
+                    baivid: "Yes",
+                    syllaby: "No",
+                    shortvidcast: "No",
+                    baividWins: true
+                  },
+                  {
+                    feature: "Credit Top-ups",
+                    baivid: "From $2",
+                    syllaby: "Not available",
+                    shortvidcast: "$10 minimum",
+                    baividWins: true
+                  }
+                ].map((row, idx) => (
+                  <tr key={idx} className="border-b border-border hover:bg-muted/50 transition-colors">
+                    <td className="p-4 font-medium text-sm">{row.feature}</td>
+                    <td className="p-4 text-center text-sm bg-primary/10">
+                      <div className="font-semibold">{row.baivid}</div>
+                      {row.baividWins && (
+                        <Check className="h-4 w-4 text-green-600 mx-auto mt-1" />
+                      )}
+                    </td>
+                    <td className="p-4 text-center text-sm">
+                      <div>{row.syllaby}</div>
+                      {row.feature !== "Avatar Videos" && row.feature !== "Content Ownership" && row.feature !== "Email After Every Post" && row.feature !== "African Voices & Art" && row.feature !== "Credit Top-ups" ? null : (
+                        <span className="text-red-600 text-xl">✕</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center text-sm">
+                      <div>{row.shortvidcast}</div>
+                      {row.feature !== "Avatar Videos" && row.feature !== "Platforms Supported" ? null : (
+                        <span className="text-red-600 text-xl">✕</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -227,6 +449,74 @@ export default function LandingPage() {
                   {plan.cta}
                 </Link>
               </div>
+            ))}
+          </div>
+
+          {/* 7-Day Guarantee */}
+          <div className="mt-12 rounded-xl border border-primary/30 bg-primary/5 p-6 flex items-center gap-4 text-center sm:text-left">
+            <Shield className="h-8 w-8 text-primary flex-shrink-0 mx-auto sm:mx-0" />
+            <div className="flex-grow">
+              <h3 className="font-semibold text-lg text-foreground">7-Day Money-Back Guarantee</h3>
+              <p className="text-sm text-muted-foreground mt-1">Try any paid plan risk-free. If you&apos;re not satisfied within 7 days, we&apos;ll refund every penny. No questions asked.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-20 sm:py-28 bg-muted/30 scroll-mt-16">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              Frequently Asked <span className="text-primary">Questions</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">Everything you need to know about Baivid.</p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                q: "What is Baivid?",
+                a: "Baivid is an AI-powered video creation platform that helps creators discover trending ideas, generate scripts, create faceless or avatar videos, and publish to 9 social platforms — all from one dashboard. Our Autopilot feature can create and post a video every single day, automatically."
+              },
+              {
+                q: "How does Autopilot work?",
+                a: "Set your niche, pick your platforms, choose your video style, and activate. Every day, Baivid discovers trending topics, writes a script, generates a video with AI visuals and voiceover, and publishes to all your connected platforms. You can require approval before posting or let it run fully automatically."
+              },
+              {
+                q: "Do I own my videos?",
+                a: "Yes, always. 100% of everything you create on Baivid belongs to you. Unlike some competitors, we never claim copyright or licensing rights on your content. You can download, repost, sell, or do anything you want with your videos."
+              },
+              {
+                q: "What platforms can I publish to?",
+                a: "YouTube, TikTok, Instagram, Facebook, LinkedIn, Pinterest, Twitter/X, Reddit, and Threads — 9 platforms total. Connect each one via OAuth and publish from a single dashboard."
+              },
+              {
+                q: "How much does a video cost?",
+                a: "A 1-minute faceless video costs 13 credits (~$0.31 on the Starter plan). Avatar videos cost 18 credits per minute. With the Pro plan at $29/month for 1,500 credits, that's roughly 115 faceless videos per month."
+              },
+              {
+                q: "Can I cancel anytime?",
+                a: "Yes. All plans are month-to-month with no contracts. Cancel anytime from your billing dashboard. Plus, every paid plan comes with a 7-day money-back guarantee."
+              },
+              {
+                q: "What makes Baivid different from Syllaby?",
+                a: "Three things: price (we start at $12/mo vs $49/mo), true daily Autopilot (Syllaby requires manual steps), and content ownership (Syllaby's terms claim rights to your content — we never do)."
+              },
+              {
+                q: "Is there an API?",
+                a: "API access is available on the Agency plan ($79/month). It includes all video creation endpoints, scheduling, and analytics. Contact us for documentation."
+              }
+            ].map((item, idx) => (
+              <details key={idx} className="group rounded-lg border border-border bg-card overflow-hidden transition-all duration-200 hover:border-primary/30">
+                <summary className="flex cursor-pointer items-center justify-between p-5 font-semibold text-foreground hover:bg-muted/50 transition-colors">
+                  <span>{item.q}</span>
+                  <ChevronDown className="h-5 w-5 text-primary transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <div className="px-5 pb-5 text-sm text-muted-foreground border-t border-border pt-4">
+                  {item.a}
+                </div>
+              </details>
             ))}
           </div>
         </div>

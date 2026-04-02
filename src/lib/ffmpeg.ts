@@ -1,5 +1,7 @@
 /**
- * Server-side FFmpeg wrapper for video assembly.
+ * Server-side video assembly wrapper.
+ * Primary: Shotstack cloud API (for Vercel deployment)
+ * Fallback: Local FFmpeg (for development/self-hosted)
  * Handles: concatenation, voiceover overlay, caption burn-in, music mixing.
  */
 
@@ -9,6 +11,7 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
 import { tmpdir } from "os";
+import { assembleVideoCloud, isShotstackConfigured } from "./shotstack";
 
 const execAsync = promisify(exec);
 
@@ -41,8 +44,34 @@ const RESOLUTIONS: Record<string, string> = {
 
 /**
  * Assemble a final video from scenes, voiceover, captions, and music.
+ * Tries Shotstack cloud API first (Vercel-compatible), falls back to FFmpeg.
  */
 export async function assembleVideo(
+  input: AssembleVideoInput
+): Promise<AssembleVideoResult> {
+  // Try Shotstack first if configured
+  if (isShotstackConfigured()) {
+    try {
+      console.log("[Video Assembly] Attempting Shotstack cloud API...");
+      const result = await assembleVideoCloud(input);
+      console.log("[Video Assembly] SUCCESS: Used Shotstack cloud API");
+      return result;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Video Assembly] Shotstack failed, falling back to FFmpeg: ${errorMsg}`);
+    }
+  } else {
+    console.log("[Video Assembly] Shotstack not configured, using FFmpeg");
+  }
+
+  // Fallback to local FFmpeg
+  return assembleVideoLocal(input);
+}
+
+/**
+ * Local FFmpeg-based assembly (fallback when Shotstack unavailable).
+ */
+async function assembleVideoLocal(
   input: AssembleVideoInput
 ): Promise<AssembleVideoResult> {
   const workDir = join(tmpdir(), `baivid-${randomUUID()}`);
