@@ -39,6 +39,7 @@ import {
   Legend,
 } from "recharts";
 import { getAnalytics, type AnalyticsData, type DateRange } from "@/actions/analytics";
+import { getAIInsights, type AIInsight } from "@/actions/ai-insights";
 
 const PLATFORMS = [
   { key: "all", label: "All" },
@@ -77,6 +78,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [platform, setPlatform] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [insights, setInsights] = useState<AIInsight | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -87,6 +90,17 @@ export default function AnalyticsPage() {
     }
     load();
   }, [platform, dateRange]);
+
+  // Load AI insights once
+  useEffect(() => {
+    async function loadInsights() {
+      setInsightsLoading(true);
+      const result = await getAIInsights();
+      setInsights(result);
+      setInsightsLoading(false);
+    }
+    loadInsights();
+  }, []);
 
   if (loading || !data) {
     return (
@@ -188,6 +202,55 @@ export default function AnalyticsPage() {
           </Card>
         ))}
       </div>
+
+      {/* AI Insights */}
+      {(insights || insightsLoading) && (
+        <Card className="border-primary/30">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              AI Insights
+              <Badge variant="outline" className="text-[10px] font-normal">
+                Powered by Gemini
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              AI analysis of your content performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {insightsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Analyzing your content...
+              </div>
+            ) : insights ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Summary</p>
+                  <p className="text-sm">{insights.summary}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Top Pattern</p>
+                  <p className="text-sm">{insights.topPerformingPattern}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-primary uppercase tracking-wide">Next Topic Suggestion</p>
+                  <p className="text-sm font-medium">{insights.nextTopicSuggestion}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Best Posting Time</p>
+                  <p className="text-sm">{insights.bestPostingTime}</p>
+                </div>
+                <div className="sm:col-span-2 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Improvement Tip</p>
+                  <p className="text-sm">{insights.improvementTip}</p>
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-2">
