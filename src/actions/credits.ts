@@ -71,11 +71,14 @@ export async function deductCredits(
     .eq("id", userId);
 
   if (updateError) {
-    return { success: false, error: "Failed to update credits" };
+    console.error("Credit deduction failed:", updateError);
+    return { success: false, error: `Failed to update credits: ${updateError.message}` };
   }
 
+  console.log(`[Credits] Deducted ${amount} from user ${userId}. New balance: ${newBalance}`);
+
   // Log transaction
-  await supabase.from("credits_transactions").insert({
+  const { error: txError } = await supabase.from("credits_transactions").insert({
     user_id: userId,
     amount: -amount,
     type: "usage",
@@ -83,6 +86,10 @@ export async function deductCredits(
     reference_id: referenceId || null,
     balance_after: newBalance,
   });
+
+  if (txError) {
+    console.error("Credit transaction log failed:", txError);
+  }
 
   // Check if balance dropped below 20% — send warning
   const planCredits = getPlanCredits(user.plan);
