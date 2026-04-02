@@ -12,8 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Check, Coins, CreditCard, ExternalLink } from "lucide-react";
+import { Loader2, Check, Coins, CreditCard, ExternalLink, Mail } from "lucide-react";
 import { createCheckoutSession, createPortalSession } from "@/actions/billing";
+import {
+  getEmailPreferences,
+  updateEmailPreferences,
+  type EmailPreferencesInput,
+} from "@/actions/email-preferences";
 import { useCreditsStore } from "@/stores/credits-store";
 import { createClient } from "@/lib/supabase/client";
 import type { CreditTransaction } from "@/types";
@@ -97,9 +102,19 @@ function SettingsContent() {
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
+  const [emailPrefs, setEmailPrefs] = useState<EmailPreferencesInput>({
+    video_ready: true,
+    credits_low: true,
+    subscription_change: true,
+    weekly_digest: true,
+    autopilot_approval: true,
+    marketing: true,
+  });
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
-    async function fetchTransactions() {
+    async function fetchData() {
       const supabase = createClient();
       const { data } = await supabase
         .from("credits_transactions")
@@ -108,8 +123,12 @@ function SettingsContent() {
         .limit(20);
       setTransactions(data || []);
       setLoadingTransactions(false);
+
+      const prefs = await getEmailPreferences();
+      if (prefs) setEmailPrefs(prefs);
+      setLoadingPrefs(false);
     }
-    fetchTransactions();
+    fetchData();
   }, []);
 
   async function handleSubscribe(priceId: string | undefined, planKey: string) {
@@ -345,6 +364,74 @@ function SettingsContent() {
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+      <Separator />
+
+      {/* Email Preferences */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Email Notifications</h2>
+        {loadingPrefs ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Mail className="h-5 w-5" />
+                Notification Preferences
+              </CardTitle>
+              <CardDescription>
+                Choose which email notifications you want to receive.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {([
+                { key: "video_ready" as const, label: "Video Notifications", desc: "When videos are ready, posted, or fail" },
+                { key: "credits_low" as const, label: "Credit Alerts", desc: "Low balance warnings and top-up confirmations" },
+                { key: "subscription_change" as const, label: "Billing & Subscription", desc: "Payment confirmations, failures, and plan changes" },
+                { key: "weekly_digest" as const, label: "Weekly Summary", desc: "Weekly performance report with views, likes, and top videos" },
+                { key: "autopilot_approval" as const, label: "Autopilot Notifications", desc: "Approval requests, activation, and run notifications" },
+                { key: "marketing" as const, label: "Product Updates", desc: "New features, tips, and Baivid news" },
+              ]).map((pref) => (
+                <label
+                  key={pref.key}
+                  className="flex items-center justify-between rounded-lg border border-border p-4 cursor-pointer hover:bg-accent/50 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{pref.label}</p>
+                    <p className="text-xs text-muted-foreground">{pref.desc}</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={emailPrefs[pref.key]}
+                    onChange={(e) =>
+                      setEmailPrefs((prev) => ({
+                        ...prev,
+                        [pref.key]: e.target.checked,
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-border accent-primary"
+                  />
+                </label>
+              ))}
+              <Button
+                variant="outline"
+                disabled={savingPrefs}
+                onClick={async () => {
+                  setSavingPrefs(true);
+                  await updateEmailPreferences(emailPrefs);
+                  setSavingPrefs(false);
+                }}
+              >
+                {savingPrefs ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Save Preferences
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   autopilotRunForUser,
   autopilotApprovalDecision,
 } from "@/inngest/autopilot";
+import { weeklySummaryFunction } from "@/inngest/weekly-summary";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -16,5 +17,6 @@ export const { GET, POST, PUT } = serve({
     autopilotDailyCron,
     autopilotRunForUser,
     autopilotApprovalDecision,
+    weeklySummaryFunction,
   ],
 });

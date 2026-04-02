@@ -266,20 +266,13 @@ async function handlePaymentFailed(
     agency: "Agency",
   };
 
-  // Send payment failed email using React Email template
+  // Send payment failed email — sendPaymentFailedEmail with userId handles logging
   try {
-    const result = await sendPaymentFailedEmail(
+    await sendPaymentFailedEmail(
       user.email,
-      planNames[user.plan] || "Unknown"
+      planNames[user.plan] || "Unknown",
+      user.id
     );
-
-    await supabase.from("email_logs").insert({
-      user_id: user.id,
-      type: "payment_failed",
-      subject: "Payment failed — please update your payment method",
-      resend_id: result.data?.id || null,
-      status: "sent",
-    });
   } catch (err) {
     console.error("Failed to send payment failed email:", err);
   }

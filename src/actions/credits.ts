@@ -342,32 +342,9 @@ async function sendLowCreditWarningChecked(
   planCredits: number,
   planName: string
 ) {
-  const supabase = await createClient();
-
-  // Check email preferences
-  const { data: prefs } = await supabase
-    .from("email_preferences")
-    .select("credits_low")
-    .eq("user_id", userId)
-    .single();
-
-  if (prefs && !prefs.credits_low) return;
-
   try {
-    const result = await sendCreditsLowEmail(
-      email,
-      currentBalance,
-      planCredits,
-      planName
-    );
-
-    await supabase.from("email_logs").insert({
-      user_id: userId,
-      type: "credits_low",
-      subject: "Your Baivid credits are running low",
-      resend_id: result.data?.id || null,
-      status: "sent",
-    });
+    // sendCreditsLowEmail with userId handles preference checking + logging via sendEmail()
+    await sendCreditsLowEmail(email, currentBalance, planCredits, planName, userId);
   } catch (err) {
     console.error("Failed to send low credit warning:", err);
   }
