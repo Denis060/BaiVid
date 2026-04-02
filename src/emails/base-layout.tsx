@@ -5,6 +5,7 @@ import {
   Hr,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -37,6 +38,14 @@ export function BaseLayout({ preview, children }: BaseLayoutProps) {
           <Hr style={hr} />
           <Text style={footer}>
             &copy; {new Date().getFullYear()} Baivid. All rights reserved.
+          </Text>
+          <Text style={footer}>
+            <Link
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/settings`}
+              style={unsubscribeLink}
+            >
+              Manage email preferences
+            </Link>
           </Text>
         </Container>
       </Body>
@@ -82,6 +91,12 @@ const hr = {
 const footer = {
   color: "#666666",
   fontSize: "12px",
+};
+
+const unsubscribeLink = {
+  color: "#666666",
+  fontSize: "11px",
+  textDecoration: "underline" as const,
 };
 
 // Shared styles for email templates
