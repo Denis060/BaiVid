@@ -78,6 +78,79 @@ export async function createFacelessVideo(input: CreateFacelessVideoInput) {
   redirect("/videos");
 }
 
+export interface CreateAvatarVideoInput {
+  title: string;
+  script: string;
+  photoUrl: string;
+  voiceSampleUrl?: string;
+  voiceId?: string;
+  style: "solo_host" | "interview" | "news_anchor" | "storyteller";
+  duration: number;
+  scriptId?: string;
+}
+
+export async function createAvatarVideo(input: CreateAvatarVideoInput) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const durationMinutes = Math.max(1, Math.ceil(input.duration / 60));
+  const creditCost = 20 * durationMinutes;
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("credits_balance")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.credits_balance < creditCost) {
+    return {
+      error: `Insufficient credits. You need ${creditCost} but have ${profile?.credits_balance || 0}.`,
+    };
+  }
+
+  const { data: video, error: insertError } = await supabase
+    .from("videos")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      type: "avatar",
+      status: "draft",
+      script_id: input.scriptId || null,
+      credits_used: creditCost,
+      metadata: {
+        photoUrl: input.photoUrl,
+        voiceSampleUrl: input.voiceSampleUrl,
+        style: input.style,
+        targetDuration: input.duration,
+      },
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !video) {
+    return { error: "Failed to create video record" };
+  }
+
+  await inngest.send({
+    name: "video/create-avatar",
+    data: {
+      videoId: video.id,
+      userId: user.id,
+      script: input.script,
+      photoUrl: input.photoUrl,
+      voiceSampleUrl: input.voiceSampleUrl,
+      voiceId: input.voiceId,
+      style: input.style,
+      duration: input.duration,
+    },
+  });
+
+  redirect("/videos");
+}
+
 /**
  * Get user's videos.
  */
