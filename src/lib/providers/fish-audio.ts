@@ -44,21 +44,37 @@ export async function generateFishAudioTTS(
   }
 
   // Fish Audio returns audio binary directly
-  const audioBuffer = await res.arrayBuffer();
-  const audioBlob = new Blob([audioBuffer], {
-    type: input.format === "wav" ? "audio/wav" : "audio/mpeg",
-  });
+  const audioBuffer = Buffer.from(await res.arrayBuffer());
 
   // Estimate duration from file size (rough: mp3 ~16KB/s at 128kbps)
-  const estimatedDuration = Math.round(audioBlob.size / 16000);
+  const estimatedDuration = Math.round(audioBuffer.length / 16000);
 
-  // In production, upload to temp storage and return URL
-  // For now, return a data URL or upload to Supabase
-  const base64 = Buffer.from(audioBuffer).toString("base64");
-  const mimeType = input.format === "wav" ? "audio/wav" : "audio/mpeg";
-  const audioUrl = `data:${mimeType};base64,${base64}`;
+  // Upload to Supabase Storage temp bucket
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-  return { audioUrl, durationSeconds: estimatedDuration };
+  const ext = input.format === "wav" ? "wav" : "mp3";
+  const fileName = `voiceover_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("voice_samples")
+    .upload(fileName, audioBuffer, {
+      contentType: input.format === "wav" ? "audio/wav" : "audio/mpeg",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload voiceover: ${uploadError.message}`);
+  }
+
+  const { data: publicUrl } = supabase.storage
+    .from("voice_samples")
+    .getPublicUrl(fileName);
+
+  return { audioUrl: publicUrl.publicUrl, durationSeconds: estimatedDuration };
 }
 
 /**

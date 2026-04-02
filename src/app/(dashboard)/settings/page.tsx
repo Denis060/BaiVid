@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Check, Coins, CreditCard, ExternalLink, Mail } from "lucide-react";
+import { Loader2, Check, Coins, CreditCard, ExternalLink, Mail, Mic, Link2, ArrowRight } from "lucide-react";
 import { createCheckoutSession, createPortalSession } from "@/actions/billing";
 import {
   getEmailPreferences,
@@ -366,6 +367,34 @@ function SettingsContent() {
           </div>
         )}
       </div>
+      {/* Quick Links */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href="/settings/voice">
+          <Card className="hover:ring-1 hover:ring-primary/50 transition-all cursor-pointer">
+            <CardContent className="flex items-center gap-4 py-4">
+              <Mic className="h-5 w-5 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Voice Profiles</p>
+                <p className="text-xs text-muted-foreground">Clone your voice or pick AI presets</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/settings/connections">
+          <Card className="hover:ring-1 hover:ring-primary/50 transition-all cursor-pointer">
+            <CardContent className="flex items-center gap-4 py-4">
+              <Link2 className="h-5 w-5 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Platform Connections</p>
+                <p className="text-xs text-muted-foreground">Connect social media accounts</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
       <Separator />
 
       {/* Email Preferences */}

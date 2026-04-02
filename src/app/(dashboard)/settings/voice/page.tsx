@@ -60,6 +60,12 @@ const LANGUAGES = [
   { value: "zh", label: "Chinese" },
   { value: "ja", label: "Japanese" },
   { value: "ko", label: "Korean" },
+  { value: "sw", label: "Swahili" },
+  { value: "yo", label: "Yoruba" },
+  { value: "kri", label: "Krio" },
+  { value: "ha", label: "Hausa" },
+  { value: "ig", label: "Igbo" },
+  { value: "am", label: "Amharic" },
 ];
 
 const PRESET_VOICES = [
