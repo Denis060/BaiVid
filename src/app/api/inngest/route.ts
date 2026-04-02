@@ -10,6 +10,7 @@ import {
 import { weeklySummaryFunction } from "@/inngest/weekly-summary";
 import { publishScheduledPost } from "@/inngest/scheduler";
 import { analyticsSnapshotCron } from "@/inngest/analytics-snapshot";
+import { voiceCloneFunction } from "@/inngest/voice-clone";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -22,5 +23,6 @@ export const { GET, POST, PUT } = serve({
     weeklySummaryFunction,
     publishScheduledPost,
     analyticsSnapshotCron,
+    voiceCloneFunction,
   ],
 });
