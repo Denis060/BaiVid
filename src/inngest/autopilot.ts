@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
+import { decrypt } from "@/lib/encryption";
 import { getGeminiFlash } from "@/lib/gemini";
 import { getTrendingData } from "@/lib/trends";
 import { routeVideoGeneration } from "@/lib/providers/video-router";
@@ -313,7 +314,7 @@ export const autopilotRunForUser = inngest.createFunction(
           videoUrl: storageUrl,
           title: idea.title,
           description: idea.description || "",
-          accessToken: account.access_token,
+          accessToken: decrypt(account.access_token),
           platformUserId: account.platform_user_id,
         });
 

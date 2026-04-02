@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getOAuthConfig, getClientCredentials } from "@/lib/oauth-config";
+import { encrypt } from "@/lib/encryption";
 
 export async function GET(
   request: Request,
@@ -130,8 +131,8 @@ export async function GET(
         platform: platform as "youtube" | "tiktok" | "instagram" | "facebook" | "linkedin" | "pinterest" | "twitter" | "reddit" | "threads",
         platform_user_id: profile.id,
         platform_username: profile.username,
-        access_token: accessToken,
-        refresh_token: refreshToken,
+        access_token: encrypt(accessToken),
+        refresh_token: refreshToken ? encrypt(refreshToken) : null,
         token_expires_at: tokenExpiresAt,
         scopes: config.scopes,
       },

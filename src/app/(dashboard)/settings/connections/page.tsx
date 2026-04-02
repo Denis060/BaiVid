@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,8 @@ import {
   AlertTriangle,
   Info,
   ChevronLeft,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { getConnectedAccounts, disconnectAccount } from "@/actions/scheduler";
 import { PLATFORM_CONFIG, type PlatformKey } from "@/lib/publishers/types";
@@ -53,12 +56,15 @@ const PLATFORM_ICONS: Record<string, string> = {
 
 const ALL_PLATFORMS = Object.keys(PLATFORM_CONFIG) as PlatformKey[];
 
-export default function ConnectionsPage() {
+function ConnectionsContent() {
   const [accounts, setAccounts] = useState<
     { id: string; platform: string; platform_username: string | null; platform_user_id: string; created_at: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const connectedPlatform = searchParams.get("connected");
+  const errorParam = searchParams.get("error");
 
   useEffect(() => {
     async function load() {
@@ -75,8 +81,6 @@ export default function ConnectionsPage() {
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
     setDisconnecting(null);
   }
-
-  const connectedPlatforms = new Set(accounts.map((a) => a.platform));
 
   if (loading) {
     return (
@@ -101,6 +105,26 @@ export default function ConnectionsPage() {
           Connect your social media accounts to publish videos directly from Baivid.
         </p>
       </div>
+
+      {connectedPlatform && (
+        <div className="rounded-lg border border-primary/50 bg-primary/10 px-4 py-3 text-sm text-primary flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 shrink-0" />
+          Successfully connected {PLATFORM_CONFIG[connectedPlatform as PlatformKey]?.name || connectedPlatform}!
+        </div>
+      )}
+
+      {errorParam && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center gap-2">
+          <XCircle className="h-4 w-4 shrink-0" />
+          {errorParam === "token_exchange_failed"
+            ? "Failed to connect — the platform rejected the authorization. Please try again."
+            : errorParam === "invalid_state"
+              ? "Connection failed — security check failed. Please try again."
+              : errorParam === "not_configured"
+                ? "This platform is not configured yet. Contact support."
+                : `Connection failed: ${errorParam.replace(/_/g, " ")}`}
+        </div>
+      )}
 
       <div className="space-y-3">
         {ALL_PLATFORMS.map((platform) => {
@@ -209,5 +233,19 @@ export default function ConnectionsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ConnectionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <ConnectionsContent />
+    </Suspense>
   );
 }

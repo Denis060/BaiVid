@@ -2,6 +2,7 @@ import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
 import { publishToplatform, type PlatformKey } from "@/lib/publishers";
 import { sendVideoPostedEmail, sendVideoFailedEmail } from "@/lib/email";
+import { decrypt } from "@/lib/encryption";
 import type { Database } from "@/types/supabase";
 
 function getServiceClient() {
@@ -117,7 +118,7 @@ export const publishScheduledPost = inngest.createFunction(
         videoUrl: details.video!.video_url!,
         title: details.video!.title || "Untitled",
         description: details.video!.description || "",
-        accessToken: details.account!.access_token,
+        accessToken: decrypt(details.account!.access_token),
         platformUserId: details.account!.platform_user_id,
       });
     });
