@@ -14,6 +14,7 @@ import { publishScheduledPost } from "@/inngest/scheduler";
 import { analyticsSnapshotCron } from "@/inngest/analytics-snapshot";
 import { voiceCloneFunction } from "@/inngest/voice-clone";
 import { videoRerenderFunction } from "@/inngest/video-rerender";
+import { providerFreeCreditsReset } from "@/inngest/provider-reset";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -30,5 +31,6 @@ export const { GET, POST, PUT } = serve({
     analyticsSnapshotCron,
     voiceCloneFunction,
     videoRerenderFunction,
+    providerFreeCreditsReset,
   ],
 });

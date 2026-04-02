@@ -34,8 +34,8 @@ export async function submitRerender(
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.credits_balance < 5) {
-    return { error: `Insufficient credits. Need 5, have ${profile?.credits_balance || 0}.` };
+  if (!profile || profile.credits_balance < 3) {
+    return { error: `Insufficient credits. Need 3, have ${profile?.credits_balance || 0}.` };
   }
 
   // Save edit instructions to video metadata

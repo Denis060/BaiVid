@@ -150,7 +150,7 @@ export const videoRerenderFunction = inngest.createFunction(
         .eq("id", videoId);
 
       // Deduct 5 credits
-      await deductCreditsService(userId, 5, "Video re-render (editor)", videoId);
+      await deductCreditsService(userId, 3, "Video re-render (editor)", videoId);
     });
 
     return { videoId, status: "completed" };

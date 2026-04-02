@@ -232,7 +232,7 @@ export default function EditorPage() {
         <Button onClick={handleSubmit} disabled={submitting}>
           {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Layers className="mr-2 h-4 w-4" />}
           Re-render
-          <Badge variant="outline" className="ml-2 text-xs"><Coins className="mr-1 h-3 w-3" />5</Badge>
+          <Badge variant="outline" className="ml-2 text-xs"><Coins className="mr-1 h-3 w-3" />3</Badge>
         </Button>
       </div>
 

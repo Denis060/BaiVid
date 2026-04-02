@@ -89,7 +89,7 @@ export default function FacelessCreatePage() {
   const [error, setError] = useState("");
 
   const durationMinutes = Math.max(1, Math.ceil(duration / 60));
-  const creditCost = 15 * durationMinutes;
+  const creditCost = 13 * durationMinutes;
 
   useEffect(() => {
     if (step === 0 && savedScripts.length === 0) {

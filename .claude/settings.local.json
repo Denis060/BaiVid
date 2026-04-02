@@ -11,7 +11,17 @@
       "Bash(npx shadcn@latest add avatar badge card dialog dropdown-menu input label scroll-area separator sheet skeleton tabs textarea tooltip select progress popover calendar command -y)",
       "Bash(gh auth:*)",
       "Bash(winget install:*)",
-      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")"
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(ls \"c:/Users/fofan/Downloads/BaiVid/src/app/\\(auth\\)/\")",
+      "Bash(tasklist)",
+      "Bash(node -e \"console.log\\(require\\(''inngest/package.json''\\).version\\)\")",
+      "Bash(wc -l \"src/app/\\(dashboard\\)/settings/connections/page.tsx\")",
+      "Bash(test -f \"src/app/\\(dashboard\\)/settings/voice/page.tsx\")",
+      "Bash(sed -i 's/15 \\\\* durationMinutes/13 * durationMinutes/' \"src/app/\\(dashboard\\)/create/faceless/page.tsx\")",
+      "Bash(sed -i 's/\"\"12\\\\/min\"\"/\"\"10\\\\/min\"\"/' \"src/app/\\(dashboard\\)/create/audio/page.tsx\")",
+      "Bash(sed -i 's/cost: \"\"15 credits\\\\/min\"\"/cost: \"\"13 credits\\\\/min\"\"/' \"src/app/\\(dashboard\\)/create/page.tsx\")",
+      "Bash(sed -i 's/cost: \"\"20 credits\\\\/min\"\"/cost: \"\"18 credits\\\\/min\"\"/' \"src/app/\\(dashboard\\)/create/page.tsx\")",
+      "Bash(sed -i 's/cost: \"\"12 credits\\\\/min\"\"/cost: \"\"10 credits\\\\/min\"\"/' \"src/app/\\(dashboard\\)/create/page.tsx\")"
     ]
   }
 }

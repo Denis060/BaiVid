@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGeminiFlash } from "@/lib/gemini";
 import { deductCredits } from "./credits";
 
-const SCRIPT_COST = 2;
+const SCRIPT_COST = 1;
 
 export interface ScriptScene {
   timestamp: string;

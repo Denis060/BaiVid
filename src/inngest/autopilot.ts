@@ -340,7 +340,7 @@ export const autopilotRunForUser = inngest.createFunction(
 
     // Deduct credits and finalize run
     await step.run("deduct-credits-finalize", async () => {
-      const creditCost = 15;
+      const creditCost = 13;
       await deductCreditsService(userId, creditCost, `Autopilot: ${idea.title}`, runId);
 
       const postedPlatforms = Object.entries(publishResults)

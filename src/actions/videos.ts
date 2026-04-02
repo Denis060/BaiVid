@@ -23,7 +23,7 @@ export async function createFacelessVideo(input: CreateFacelessVideoInput) {
 
   // Check credits
   const durationMinutes = Math.max(1, Math.ceil(input.duration / 60));
-  const creditCost = 15 * durationMinutes;
+  const creditCost = 13 * durationMinutes;
 
   const { data: profile } = await supabase
     .from("users")
@@ -97,7 +97,7 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
   if (!user) return { error: "Not authenticated" };
 
   const durationMinutes = Math.max(1, Math.ceil(input.duration / 60));
-  const creditCost = 20 * durationMinutes;
+  const creditCost = 18 * durationMinutes;
 
   const { data: profile } = await supabase
     .from("users")
@@ -169,7 +169,7 @@ export async function createAudioVideo(input: CreateAudioVideoInput) {
   if (!user) return { error: "Not authenticated" };
 
   const durationMinutes = Math.max(1, Math.ceil(input.durationSeconds / 60));
-  const creditCost = 12 * durationMinutes;
+  const creditCost = 10 * durationMinutes;
 
   const { data: profile } = await supabase
     .from("users")
@@ -231,7 +231,7 @@ export async function createUrlVideo(input: CreateUrlVideoInput) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const creditCost = 18;
+  const creditCost = 15;
 
   const { data: profile } = await supabase
     .from("users")

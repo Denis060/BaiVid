@@ -192,7 +192,7 @@ export default function AudioVideoPage() {
         {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Film className="mr-2 h-4 w-4" />}
         Generate Video
         <Badge variant="outline" className="ml-2 text-xs font-normal">
-          <Coins className="mr-1 h-3 w-3" />{audioDuration > 0 ? creditCost : "12/min"} credits
+          <Coins className="mr-1 h-3 w-3" />{audioDuration > 0 ? creditCost : "10/min"} credits
         </Badge>
       </Button>
     </div>

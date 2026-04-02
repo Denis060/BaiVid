@@ -113,7 +113,7 @@ export const audioVideoFunction = inngest.createFunction(
       }).eq("id", videoId);
 
       const durationMinutes = Math.max(1, Math.ceil(durationSeconds / 60));
-      const creditCost = 12 * durationMinutes;
+      const creditCost = 10 * durationMinutes;
       await deductCreditsService(userId, creditCost, `Audio-to-video (${durationMinutes}min)`, videoId);
     });
 

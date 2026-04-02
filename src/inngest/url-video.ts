@@ -107,7 +107,7 @@ export const urlVideoFunction = inngest.createFunction(
         model_used: "url-to-video",
       }).eq("id", videoId);
 
-      await deductCreditsService(userId, 18, `URL-to-video: ${title}`, videoId);
+      await deductCreditsService(userId, 15, `URL-to-video: ${title}`, videoId);
     });
 
     return { videoId, status: "completed" };

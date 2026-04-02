@@ -167,7 +167,7 @@ export const avatarVideoFunction = inngest.createFunction(
     // Step 7: Deduct credits (20 per minute)
     await step.run("deduct-credits", async () => {
       const durationMinutes = Math.max(1, Math.ceil(duration / 60));
-      const creditCost = 20 * durationMinutes;
+      const creditCost = 18 * durationMinutes;
       await deductCreditsService(userId, creditCost, `Avatar video (${durationMinutes}min, D-ID, ${style})`, videoId);
     });
 

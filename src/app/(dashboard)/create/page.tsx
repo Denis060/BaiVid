@@ -7,7 +7,7 @@ const MODES = [
     icon: Video,
     title: "Faceless Video",
     desc: "AI-generated visuals with voiceover narration and auto-captions. Perfect for tutorials and listicles.",
-    cost: "15 credits/min",
+    cost: "13 credits/min",
     emoji: "🎬",
   },
   {
@@ -15,7 +15,7 @@ const MODES = [
     icon: User,
     title: "Avatar Video",
     desc: "AI talking-head presenter with lip-sync. Upload a photo and your script comes to life.",
-    cost: "20 credits/min",
+    cost: "18 credits/min",
     emoji: "🧑‍💼",
   },
   {
@@ -23,7 +23,7 @@ const MODES = [
     icon: Music,
     title: "Audio to Video",
     desc: "Upload a podcast or audio file and we generate matching visuals automatically.",
-    cost: "12 credits/min",
+    cost: "10 credits/min",
     emoji: "🎙️",
   },
   {
@@ -31,7 +31,7 @@ const MODES = [
     icon: LinkIcon,
     title: "URL to Video",
     desc: "Paste an article URL and we turn it into a narrated video with AI visuals.",
-    cost: "18 credits",
+    cost: "15 credits",
     emoji: "🔗",
   },
 ];

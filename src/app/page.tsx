@@ -170,12 +170,35 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Ownership Badge */}
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-4">
+            <Check className="h-3.5 w-3.5" />
+            Content Ownership
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            You own 100% of everything you create
+          </h2>
+          <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
+            Unlike other platforms that claim copyright on AI-generated content,
+            Baivid&apos;s terms guarantee full ownership of every video, script,
+            and thumbnail you create. Always.
+          </p>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="py-20 sm:py-28 bg-muted/30 scroll-mt-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Simple, transparent pricing</h2>
-            <p className="mt-4 text-lg text-muted-foreground">Start free. Upgrade when you&apos;re ready to scale.</p>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Start free. Upgrade when you&apos;re ready to scale.
+              <span className="block mt-1 text-sm text-primary font-medium">
+                3x cheaper than Syllaby on every action.
+              </span>
+            </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             {PLANS.map((plan) => (

@@ -163,7 +163,7 @@ export const facelessVideoFunction = inngest.createFunction(
     // Step 9: Deduct credits
     await step.run("deduct-credits", async () => {
       const durationMinutes = Math.max(1, Math.ceil(duration / 60));
-      const creditCost = 15 * durationMinutes;
+      const creditCost = 13 * durationMinutes;
       await deductCreditsService(userId, creditCost, `Faceless video (${durationMinutes}min, ${modelUsed})`, videoId);
     });
 
