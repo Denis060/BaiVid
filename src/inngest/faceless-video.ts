@@ -2,7 +2,6 @@ import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
 import { deductCreditsService } from "@/lib/credits-service";
 import { routeVideoGeneration } from "@/lib/providers/video-router";
-import { generateFishAudioTTS } from "@/lib/providers/fish-audio";
 import { assembleVideo, type CaptionEntry } from "@/lib/ffmpeg";
 import type { Database } from "@/types/supabase";
 
@@ -20,7 +19,7 @@ interface FacelessVideoEvent {
     script: string;
     artStyle: string;
     voiceId: string;
-    duration: number; // target seconds
+    duration: number;
     aspectRatio: "16:9" | "9:16" | "1:1";
   };
 }
@@ -37,137 +36,197 @@ export const facelessVideoFunction = inngest.createFunction(
 
     const supabase = getServiceClient();
 
-    // Update status to generating
-    await step.run("update-status-generating", async () => {
-      await supabase
-        .from("videos")
-        .update({ status: "generating" })
-        .eq("id", videoId);
-    });
+    try {
+      // Update status to generating
+      await step.run("update-status-generating", async () => {
+        await supabase
+          .from("videos")
+          .update({ status: "generating" })
+          .eq("id", videoId);
+      });
 
-    // Step 1: Parse script into scenes
-    const scenes = await step.run("parse-scenes", async () => {
-      return parseScriptToScenes(script, duration);
-    });
+      // Step 1: Parse script into scenes
+      const scenes = await step.run("parse-scenes", async () => {
+        return parseScriptToScenes(script, duration);
+      });
 
-    // Step 2: Generate video for each scene
-    const sceneResults = await step.run("generate-scenes", async () => {
-      const results: { url: string; provider: string }[] = [];
+      // Step 2: Generate video for each scene
+      const sceneResults = await step.run("generate-scenes", async () => {
+        const results: { url: string; provider: string }[] = [];
 
-      for (const scene of scenes) {
-        try {
-          const result = await routeVideoGeneration({
-            prompt: `${scene.visualPrompt}. Style: ${artStyle}. High quality, professional.`,
-            duration: scene.duration,
-            aspectRatio,
-            style: artStyle,
-          });
-          results.push({ url: result.videoUrl, provider: result.provider });
-        } catch (err) {
-          console.error(`Scene generation failed:`, err);
-          // Push empty — will be handled in assembly
-          results.push({ url: "", provider: "failed" });
+        for (const scene of scenes) {
+          try {
+            const result = await routeVideoGeneration({
+              prompt: `${scene.visualPrompt}. Style: ${artStyle}. High quality, professional.`,
+              duration: scene.duration,
+              aspectRatio,
+              style: artStyle,
+              userId,
+            });
+            results.push({ url: result.videoUrl, provider: result.provider });
+          } catch (err) {
+            console.error(`Scene generation failed:`, err);
+            results.push({ url: "", provider: "failed" });
+          }
         }
-      }
 
-      return results;
-    });
+        return results;
+      });
 
-    // Step 3: Generate voiceover
-    const voiceover = await step.run("generate-voiceover", async () => {
-      try {
-        const fullNarration = scenes.map((s) => s.narration).join(" ");
-        const result = await generateFishAudioTTS({
-          text: fullNarration,
-          voiceId,
-        });
-        return result;
-      } catch (err) {
-        console.error("Voiceover generation failed:", err);
-        return null;
-      }
-    });
+      // Step 3: Generate voiceover
+      const voiceover = await step.run("generate-voiceover", async () => {
+        try {
+          // Try Google TTS first if available
+          if (process.env.GOOGLE_TTS_API_KEY) {
+            const { routeTTS } = await import("@/lib/providers/tts-router");
+            const result = await routeTTS({
+              text: scenes.map((s) => s.narration).join(" "),
+              voiceId,
+              userId,
+            });
+            return result;
+          }
+          // Fallback to Fish Audio
+          const { generateFishAudioTTS } = await import("@/lib/providers/fish-audio");
+          const result = await generateFishAudioTTS({
+            text: scenes.map((s) => s.narration).join(" "),
+            voiceId,
+          });
+          return result;
+        } catch (err) {
+          console.error("Voiceover generation failed:", err);
+          return null;
+        }
+      });
 
-    // Step 4: Generate captions from narration
-    const captions = await step.run("generate-captions", async () => {
-      return generateCaptionsFromScenes(scenes);
-    });
-
-    // Step 5: Assemble final video
-    const assembled = await step.run("assemble-video", async () => {
       const validSceneUrls = sceneResults
         .filter((r) => r.url && r.provider !== "failed")
         .map((r) => r.url);
 
       if (validSceneUrls.length === 0) {
-        throw new Error("No scenes generated successfully");
+        throw new Error("No scenes generated successfully. Check API keys for video providers.");
       }
 
-      await supabase
-        .from("videos")
-        .update({ status: "processing" })
-        .eq("id", videoId);
+      const modelUsed = sceneResults.find((r) => r.provider !== "failed")?.provider || "unknown";
 
-      return await assembleVideo({
-        sceneUrls: validSceneUrls,
-        voiceoverUrl: voiceover?.audioUrl,
-        captions,
-        aspectRatio,
-      });
-    });
+      // Step 4: Try assembly, or use first scene directly
+      let finalVideoUrl: string;
+      let finalDuration = duration;
 
-    // Step 6: Upload to Supabase Storage
-    const storageResult = await step.run("upload-to-storage", async () => {
-      const { readFile } = await import("fs/promises");
-      const fileBuffer = await readFile(assembled.outputPath);
+      try {
+        const assembled = await step.run("assemble-video", async () => {
+          await supabase
+            .from("videos")
+            .update({ status: "processing" })
+            .eq("id", videoId);
 
-      const fileName = `${userId}/${videoId}.mp4`;
-      const { error: uploadError } = await supabase.storage
-        .from("videos")
-        .upload(fileName, fileBuffer, {
-          contentType: "video/mp4",
-          upsert: true,
+          const captions = generateCaptionsFromScenes(scenes);
+
+          return await assembleVideo({
+            sceneUrls: validSceneUrls,
+            voiceoverUrl: voiceover?.audioUrl,
+            captions,
+            aspectRatio,
+          });
         });
 
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+        // Upload assembled file to storage
+        finalVideoUrl = await step.run("upload-assembled", async () => {
+          const { readFile } = await import("fs/promises");
+          const fileBuffer = await readFile(assembled.outputPath);
 
-      const { data: publicUrl } = supabase.storage
-        .from("videos")
-        .getPublicUrl(fileName);
+          const fileName = `${userId}/${videoId}.mp4`;
+          const { error: uploadError } = await supabase.storage
+            .from("videos")
+            .upload(fileName, fileBuffer, {
+              contentType: "video/mp4",
+              upsert: true,
+            });
 
-      // Clean up temp file
-      const { unlink } = await import("fs/promises");
-      await unlink(assembled.outputPath).catch(() => {});
+          if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-      return publicUrl.publicUrl;
-    });
+          const { data: publicUrl } = supabase.storage
+            .from("videos")
+            .getPublicUrl(fileName);
 
-    // Step 7: Determine which provider was used
-    const modelUsed = sceneResults.find((r) => r.provider !== "failed")?.provider || "unknown";
+          const { unlink } = await import("fs/promises");
+          await unlink(assembled.outputPath).catch(() => {});
 
-    // Step 8: Update video record
-    await step.run("update-video-record", async () => {
-      await supabase
-        .from("videos")
-        .update({
-          status: "completed",
-          video_url: storageResult,
-          duration: Math.round(assembled.durationSeconds),
-          model_used: modelUsed,
-          art_style: artStyle,
-          aspect_ratio: aspectRatio,
-        })
-        .eq("id", videoId);
-    });
+          return publicUrl.publicUrl;
+        });
 
-    // Step 9: Deduct credits
-    await step.run("deduct-credits", async () => {
-      const durationMinutes = Math.max(1, Math.ceil(duration / 60));
-      const creditCost = 13 * durationMinutes;
-      await deductCreditsService(userId, creditCost, `Faceless video (${durationMinutes}min, ${modelUsed})`, videoId);
-    });
+        finalDuration = Math.round(assembled.durationSeconds);
+      } catch (assemblyErr) {
+        console.warn("Assembly failed, using first scene directly:", assemblyErr);
 
-    return { videoId, status: "completed", modelUsed };
+        // Fallback: use the first scene URL directly as the video
+        // This works when no assembly tool is available (e.g. Vercel without Shotstack)
+        finalVideoUrl = await step.run("use-scene-directly", async () => {
+          // Download scene and re-upload to our storage
+          const sceneUrl = validSceneUrls[0];
+          const res = await fetch(sceneUrl);
+          if (!res.ok) throw new Error("Failed to download scene video");
+
+          const buffer = Buffer.from(await res.arrayBuffer());
+          const fileName = `${userId}/${videoId}.mp4`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("videos")
+            .upload(fileName, buffer, {
+              contentType: "video/mp4",
+              upsert: true,
+            });
+
+          if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+          const { data: publicUrl } = supabase.storage
+            .from("videos")
+            .getPublicUrl(fileName);
+
+          return publicUrl.publicUrl;
+        });
+      }
+
+      // Step 5: Update video record
+      await step.run("update-video-record", async () => {
+        await supabase
+          .from("videos")
+          .update({
+            status: "completed",
+            video_url: finalVideoUrl,
+            duration: finalDuration,
+            model_used: modelUsed,
+            art_style: artStyle,
+            aspect_ratio: aspectRatio,
+          })
+          .eq("id", videoId);
+      });
+
+      // Step 6: Deduct credits
+      await step.run("deduct-credits", async () => {
+        const durationMinutes = Math.max(1, Math.ceil(duration / 60));
+        const creditCost = 13 * durationMinutes;
+        await deductCreditsService(userId, creditCost, `Faceless video (${durationMinutes}min, ${modelUsed})`, videoId);
+      });
+
+      return { videoId, status: "completed", modelUsed };
+    } catch (err) {
+      // Top-level error handler — mark video as failed
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error(`Faceless video pipeline failed for ${videoId}:`, errorMsg);
+
+      await step.run("mark-failed", async () => {
+        await supabase
+          .from("videos")
+          .update({
+            status: "failed",
+            error_message: errorMsg.slice(0, 500),
+          })
+          .eq("id", videoId);
+      });
+
+      return { videoId, status: "failed", error: errorMsg };
+    }
   }
 );
 
@@ -183,14 +242,12 @@ function parseScriptToScenes(
   script: string,
   targetDuration: number
 ): SceneSegment[] {
-  // Split by scene markers or paragraphs
   const blocks = script
     .split(/\[SCENE \d+[^\]]*\]|\[HOOK\]|\[CTA\]|\n\n+/)
     .map((b) => b.trim())
     .filter((b) => b.length > 10);
 
   if (blocks.length === 0) {
-    // Fallback: split by sentences
     const sentences = script.match(/[^.!?]+[.!?]+/g) || [script];
     const chunkSize = Math.max(1, Math.ceil(sentences.length / 5));
     const chunks: string[] = [];
@@ -207,7 +264,6 @@ function parseScriptToScenes(
   const sceneDuration = Math.round(targetDuration / blocks.length);
 
   return blocks.map((block) => {
-    // Check for visual direction markers
     const visualMatch = block.match(/(?:📹|Visual:|visual_direction:)\s*(.+)/i);
     const narration = block
       .replace(/(?:📹|Visual:|visual_direction:)\s*.+/gi, "")
@@ -216,13 +272,12 @@ function parseScriptToScenes(
     return {
       narration,
       visualPrompt: visualMatch?.[1] || extractVisualPrompt(narration),
-      duration: Math.min(sceneDuration, 10), // Max 10s per AI clip
+      duration: Math.min(sceneDuration, 10),
     };
   });
 }
 
 function extractVisualPrompt(narration: string): string {
-  // Extract key nouns/actions for visual prompt
   const cleaned = narration
     .replace(/['"]/g, "")
     .replace(/\b(the|a|an|is|are|was|were|and|or|but|in|on|at|to|for)\b/gi, "")
@@ -235,7 +290,6 @@ function generateCaptionsFromScenes(scenes: SceneSegment[]): CaptionEntry[] {
   let currentTime = 0;
 
   for (const scene of scenes) {
-    // Split narration into caption chunks (~8 words each)
     const words = scene.narration.split(/\s+/);
     const chunkSize = 8;
     const wordsPerSecond = words.length / scene.duration;
@@ -244,7 +298,7 @@ function generateCaptionsFromScenes(scenes: SceneSegment[]): CaptionEntry[] {
       const chunk = words.slice(i, i + chunkSize).join(" ");
       const chunkDuration = Math.min(
         chunk.split(/\s+/).length / wordsPerSecond,
-        4 // Max 4 seconds per caption
+        4
       );
 
       captions.push({
