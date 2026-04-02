@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +77,7 @@ function getScoreBg(score: number) {
 }
 
 export default function IdeasPage() {
+  const router = useRouter();
   const [niche, setNiche] = useState("");
   const [platform, setPlatform] = useState("any");
   const [region, setRegion] = useState("US");
@@ -357,14 +359,19 @@ export default function IdeasPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {idea.status === "new" && (
+                      {(idea.status === "new" || idea.status === "scripted") && (
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          title="Mark as scripted"
-                          onClick={() =>
-                            handleStatusChange(idea.id, "scripted")
-                          }
+                          title="Generate script"
+                          onClick={async () => {
+                            if (idea.status === "new") {
+                              await handleStatusChange(idea.id, "scripted");
+                            }
+                            router.push(
+                              `/scripts?topic=${encodeURIComponent(idea.title)}`
+                            );
+                          }}
                         >
                           <FileText className="h-4 w-4" />
                         </Button>

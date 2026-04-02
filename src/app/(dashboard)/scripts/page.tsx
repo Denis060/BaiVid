@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,8 +77,9 @@ const MODES: { value: ScriptMode; label: string; icon: React.ReactNode; desc: st
   { value: "educational", label: "Educational", icon: <GraduationCap className="h-4 w-4" />, desc: "2–8 min" },
 ];
 
-export default function ScriptsPage() {
-  const [topic, setTopic] = useState("");
+function ScriptsContent() {
+  const searchParams = useSearchParams();
+  const [topic, setTopic] = useState(searchParams.get("topic") || "");
   const [tone, setTone] = useState<ScriptTone>("entertaining");
   const [platform, setPlatform] = useState("youtube");
   const [mode, setMode] = useState<ScriptMode>("short_form");
@@ -465,5 +467,19 @@ export default function ScriptsPage() {
         </Dialog>
       )}
     </div>
+  );
+}
+
+export default function ScriptsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <ScriptsContent />
+    </Suspense>
   );
 }
