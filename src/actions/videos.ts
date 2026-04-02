@@ -58,7 +58,8 @@ export async function createFacelessVideo(input: CreateFacelessVideoInput) {
     .single();
 
   if (insertError || !video) {
-    return { error: "Failed to create video record" };
+    console.error("Video insert failed:", insertError);
+    return { error: `Failed to create video record: ${insertError?.message || "unknown error"}` };
   }
 
   // Trigger Inngest background job
@@ -131,7 +132,7 @@ export async function createAvatarVideo(input: CreateAvatarVideoInput) {
     .single();
 
   if (insertError || !video) {
-    return { error: "Failed to create video record" };
+    console.error("Video insert failed:", insertError); return { error: `Failed to create video: ${insertError?.message || "unknown"}` };
   }
 
   await inngest.send({
@@ -196,7 +197,10 @@ export async function createAudioVideo(input: CreateAudioVideoInput) {
     .select("id")
     .single();
 
-  if (insertError || !video) return { error: "Failed to create video record" };
+  if (insertError || !video) {
+    console.error("Video insert failed:", insertError);
+    return { error: `Failed to create video: ${insertError?.message || "unknown"}` };
+  }
 
   await inngest.send({
     name: "video/create-audio",
@@ -258,7 +262,10 @@ export async function createUrlVideo(input: CreateUrlVideoInput) {
     .select("id")
     .single();
 
-  if (insertError || !video) return { error: "Failed to create video record" };
+  if (insertError || !video) {
+    console.error("Video insert failed:", insertError);
+    return { error: `Failed to create video: ${insertError?.message || "unknown"}` };
+  }
 
   await inngest.send({
     name: "video/create-url",
