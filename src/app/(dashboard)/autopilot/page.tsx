@@ -60,8 +60,22 @@ const WIZARD_STEPS = [
   { label: "Art Style", icon: Palette },
   { label: "Voice", icon: Mic },
   { label: "Duration", icon: Clock },
+  { label: "Language", icon: Languages },
   { label: "Approval", icon: Shield },
   { label: "Review", icon: CheckCircle },
+];
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "de", label: "German" },
+  { value: "pt", label: "Portuguese" },
+  { value: "ar", label: "Arabic" },
+  { value: "hi", label: "Hindi" },
+  { value: "zh", label: "Chinese" },
+  { value: "ja", label: "Japanese" },
+  { value: "ko", label: "Korean" },
 ];
 
 const NICHES = [
@@ -149,8 +163,9 @@ export default function AutopilotPage() {
       case 6: return !!artStyle;
       case 7: return !!voiceId;
       case 8: return !!durationPref;
-      case 9: return !!approvalMode;
-      case 10: return true;
+      case 9: return !!language;
+      case 10: return !!approvalMode;
+      case 11: return true;
       default: return false;
     }
   }
@@ -635,8 +650,38 @@ export default function AutopilotPage() {
         </Card>
       )}
 
-      {/* Step 9: Approval */}
+      {/* Step 9: Language */}
       {step === 9 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Content Language</CardTitle>
+            <CardDescription>
+              What language should the scripts and voiceover be in?
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.value}
+                  type="button"
+                  onClick={() => setLanguage(l.value)}
+                  className={`rounded-lg border p-3 text-sm transition-all ${
+                    language === l.value
+                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 10: Approval */}
+      {step === 10 && (
         <Card>
           <CardHeader>
             <CardTitle>Approval Mode</CardTitle>
@@ -645,10 +690,11 @@ export default function AutopilotPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               {[
-                { value: "approve", label: "Require Approval", desc: "Review via email before publishing" },
-                { value: "auto", label: "Fully Automatic", desc: "Publish without review" },
+                { value: "approve", label: "Require Approval", desc: "Review via email before publishing — you approve or reject each run" },
+                { value: "notify_only", label: "Notify Only", desc: "Publishes automatically but sends you an email notification for each run" },
+                { value: "auto", label: "Fully Automatic", desc: "Publishes silently with no emails — check the dashboard for results" },
               ].map((m) => (
                 <button
                   key={m.value}
@@ -669,8 +715,8 @@ export default function AutopilotPage() {
         </Card>
       )}
 
-      {/* Step 10: Review */}
-      {step === 10 && (
+      {/* Step 11: Review */}
+      {step === 11 && (
         <Card>
           <CardHeader>
             <CardTitle>Review Settings</CardTitle>
@@ -686,7 +732,8 @@ export default function AutopilotPage() {
               ["Art Style", artStyle],
               ["Voice", FISH_AUDIO_PRESETS.find((v) => v.id === voiceId)?.name || voiceId],
               ["Duration", durationPref],
-              ["Approval", approvalMode === "approve" ? "Require Approval" : "Fully Automatic"],
+              ["Language", LANGUAGES.find((l) => l.value === language)?.label || language],
+              ["Approval", approvalMode === "approve" ? "Require Approval" : approvalMode === "notify_only" ? "Notify Only" : "Fully Automatic"],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 border-b border-border last:border-0">
                 <span className="text-muted-foreground">{label}</span>

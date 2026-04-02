@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendAutopilotActivatedEmail } from "@/lib/email";
 import type { PlatformType } from "@/types";
 
 export interface AutopilotProfileInput {
@@ -69,6 +69,36 @@ export async function saveAutopilotProfile(input: AutopilotProfileInput) {
       .single();
     if (!created) return { error: "Failed to create profile" };
     profileId = created.id;
+  }
+
+  // Send activation email on first creation
+  if (!existing) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", user.id)
+      .single();
+
+    if (userData?.email) {
+      try {
+        await sendAutopilotActivatedEmail(
+          userData.email,
+          input.name,
+          input.niche,
+          input.postingFrequency,
+          input.targetPlatforms.length
+        );
+
+        await supabase.from("email_logs").insert({
+          user_id: user.id,
+          type: "autopilot_activated",
+          subject: `Autopilot "${input.name}" is now live!`,
+          status: "sent",
+        });
+      } catch (err) {
+        console.error("Failed to send autopilot activation email:", err);
+      }
+    }
   }
 
   return { success: true, profileId };

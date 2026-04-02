@@ -5,6 +5,7 @@ import { CreditsLowEmail } from "@/emails/credits-low";
 import { PaymentFailedEmail } from "@/emails/payment-failed";
 import { VideoReadyEmail } from "@/emails/video-ready";
 import { AutopilotApprovalEmail } from "@/emails/autopilot-approval";
+import { AutopilotActivatedEmail } from "@/emails/autopilot-activated";
 
 const FROM = "Baivid <noreply@baivid.com>";
 
@@ -73,6 +74,24 @@ export async function sendAutopilotApprovalEmail(
     from: FROM,
     to,
     subject: `Autopilot needs your approval — ${stage}`,
+    html,
+  });
+}
+
+export async function sendAutopilotActivatedEmail(
+  to: string,
+  profileName: string,
+  niche: string,
+  frequency: string,
+  platformCount: number
+) {
+  const html = await render(
+    AutopilotActivatedEmail({ profileName, niche, frequency, platformCount })
+  );
+  return getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Autopilot "${profileName}" is now live!`,
     html,
   });
 }
