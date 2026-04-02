@@ -153,29 +153,34 @@ function buildTimeline(
 ): ShotstackTimeline {
   const tracks: ShotstackTrack[] = [];
 
-  // Track 0: Video track with concatenated scenes
-  const videoClips = buildVideoTrack(input.sceneUrls, resolution);
-  tracks.push({ clips: videoClips });
+  // Shotstack tracks: index 0 = TOP layer, last = BOTTOM layer
+  // So captions must be FIRST (on top), video LAST (on bottom)
 
-  // Track 1: Voiceover audio track (if provided)
-  if (input.voiceoverUrl) {
-    const voiceoverClips = buildAudioTrack(input.voiceoverUrl, videoClips);
-    tracks.push({ clips: voiceoverClips });
-  }
-
-  // Track 2: Background music track at 30% volume (if provided)
-  if (input.musicUrl) {
-    const musicClips = buildAudioTrack(input.musicUrl, videoClips, 0.3);
-    tracks.push({ clips: musicClips });
-  }
-
-  // Track 3: Caption overlays (if provided)
+  // Track 0 (top layer): Caption overlays
   if (input.captions && input.captions.length > 0) {
     const captionClips = buildCaptionTrack(input.captions, resolution);
     if (captionClips.length > 0) {
       tracks.push({ clips: captionClips });
     }
   }
+
+  // Track 1: Voiceover audio
+  if (input.voiceoverUrl) {
+    const videoClips = buildVideoTrack(input.sceneUrls, resolution);
+    const voiceoverClips = buildAudioTrack(input.voiceoverUrl, videoClips);
+    tracks.push({ clips: voiceoverClips });
+  }
+
+  // Track 2: Background music at 30% volume
+  if (input.musicUrl) {
+    const videoClips = buildVideoTrack(input.sceneUrls, resolution);
+    const musicClips = buildAudioTrack(input.musicUrl, videoClips, 0.3);
+    tracks.push({ clips: musicClips });
+  }
+
+  // Track 3 (bottom layer): Video track
+  const videoClips = buildVideoTrack(input.sceneUrls, resolution);
+  tracks.push({ clips: videoClips });
 
   return { tracks };
 }

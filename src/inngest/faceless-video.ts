@@ -289,11 +289,14 @@ function parseScriptToScenes(
 }
 
 function extractVisualPrompt(narration: string): string {
+  // Extract 2-3 concrete nouns/keywords for stock footage search
   const cleaned = narration
-    .replace(/['"]/g, "")
-    .replace(/\b(the|a|an|is|are|was|were|and|or|but|in|on|at|to|for)\b/gi, "")
+    .replace(/['"!?.,;:()[\]{}]/g, "")
+    .replace(/\b(the|a|an|is|are|was|were|and|or|but|in|on|at|to|for|of|with|this|that|these|those|it|its|you|your|we|our|they|their|has|have|had|will|would|can|could|do|does|did|not|no|so|if|then|than|just|also|very|really|much|more|most|how|what|when|where|who|why)\b/gi, "")
     .trim();
-  return cleaned.slice(0, 200);
+  // Take first 3-5 meaningful words
+  const words = cleaned.split(/\s+/).filter((w) => w.length > 2).slice(0, 5);
+  return words.join(" ").slice(0, 80) || "technology modern";
 }
 
 function generateCaptionsFromScenes(scenes: SceneSegment[]): CaptionEntry[] {
