@@ -46,7 +46,6 @@ import {
   getAutopilotRuns,
 } from "@/actions/autopilot";
 import { PLATFORM_CONFIG, type PlatformKey } from "@/lib/publishers/types";
-import { FISH_AUDIO_PRESETS } from "@/lib/providers/fish-audio";
 
 type WizardView = "loading" | "wizard" | "dashboard";
 
@@ -84,10 +83,6 @@ const NICHES = [
   "Fashion", "Music", "Sports", "Science", "Motivation",
 ];
 
-const ART_STYLES = [
-  "cinematic", "minimal", "bold", "documentary", "animated", "lofi", "afrobeat",
-];
-
 const FREQUENCIES = [
   { value: "daily", label: "Daily", desc: "1 video per day" },
   { value: "weekdays", label: "Weekdays", desc: "Mon-Fri" },
@@ -107,7 +102,7 @@ export default function AutopilotPage() {
   const [frequency, setFrequency] = useState("daily");
   const [videoType, setVideoType] = useState<"faceless" | "avatar">("faceless");
   const [artStyle, setArtStyle] = useState("cinematic");
-  const [voiceId, setVoiceId] = useState<string>(FISH_AUDIO_PRESETS[0].id);
+  const [voiceId, setVoiceId] = useState<string>("default-male-1");
   const [durationPref, setDurationPref] = useState("60s");
   const [approvalMode, setApprovalMode] = useState("approve");
   const [language, setLanguage] = useState("en");
@@ -541,25 +536,47 @@ export default function AutopilotPage() {
         <Card>
           <CardHeader>
             <CardTitle>Video Type</CardTitle>
+            <CardDescription>Choose how your videos will look.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {[
-                { value: "faceless" as const, label: "Faceless", desc: "AI visuals + voiceover" },
-                { value: "avatar" as const, label: "Avatar", desc: "Talking head AI presenter" },
+                {
+                  value: "faceless" as const,
+                  label: "Faceless Video",
+                  desc: "AI-generated visuals with voiceover narration and captions. No person on screen — perfect for tutorials, listicles, and educational content.",
+                  features: ["AI visuals per scene", "Voiceover narration", "Auto captions", "Stock footage fallback"],
+                  emoji: "🎬",
+                },
+                {
+                  value: "avatar" as const,
+                  label: "Avatar Video",
+                  desc: "AI talking head presenter with lip-sync. Upload a photo and the AI brings it to life with your script.",
+                  features: ["Talking head presenter", "Lip-sync animation", "Custom voice clone", "Multiple styles"],
+                  emoji: "🧑‍💼",
+                },
               ].map((t) => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => setVideoType(t.value)}
-                  className={`rounded-lg border p-4 text-center transition-all ${
+                  className={`rounded-xl border p-5 text-left transition-all ${
                     videoType === t.value
-                      ? "border-primary bg-primary/10 ring-1 ring-primary"
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <p className="font-medium">{t.label}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                  <div className="text-3xl mb-3">{t.emoji}</div>
+                  <p className="font-semibold text-base mb-1">{t.label}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t.desc}</p>
+                  <ul className="space-y-1">
+                    {t.features.map((f) => (
+                      <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <CheckCircle className={`h-3 w-3 shrink-0 ${videoType === t.value ? "text-primary" : "text-muted-foreground/50"}`} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
                 </button>
               ))}
             </div>
@@ -572,21 +589,32 @@ export default function AutopilotPage() {
         <Card>
           <CardHeader>
             <CardTitle>Art Style</CardTitle>
+            <CardDescription>Set the visual aesthetic for your AI-generated scenes.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {ART_STYLES.map((s) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                { id: "cinematic", emoji: "🎥", label: "Cinematic", desc: "Dramatic lighting, film-like color grading, wide shots", color: "from-amber-900/20 to-orange-900/20" },
+                { id: "minimal", emoji: "◻️", label: "Minimal", desc: "Clean backgrounds, simple compositions, modern feel", color: "from-gray-800/20 to-gray-700/20" },
+                { id: "bold", emoji: "🔥", label: "Bold", desc: "High contrast, saturated colors, eye-catching visuals", color: "from-red-900/20 to-pink-900/20" },
+                { id: "documentary", emoji: "📸", label: "Documentary", desc: "Realistic footage, journalistic style, authentic feel", color: "from-slate-800/20 to-slate-700/20" },
+                { id: "animated", emoji: "✨", label: "Animated", desc: "Motion graphics, cartoon style, playful animations", color: "from-purple-900/20 to-indigo-900/20" },
+                { id: "lofi", emoji: "☕", label: "Lo-fi", desc: "Warm tones, grain texture, nostalgic aesthetic", color: "from-yellow-900/20 to-amber-800/20" },
+                { id: "afrobeat", emoji: "🥁", label: "Afrobeat", desc: "Vibrant colors, rhythmic patterns, African-inspired art", color: "from-green-900/20 to-yellow-900/20" },
+              ].map((s) => (
                 <button
-                  key={s}
+                  key={s.id}
                   type="button"
-                  onClick={() => setArtStyle(s)}
-                  className={`rounded-lg border p-3 text-sm capitalize transition-all ${
-                    artStyle === s
-                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
+                  onClick={() => setArtStyle(s.id)}
+                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition-all bg-gradient-to-br ${s.color} ${
+                    artStyle === s.id
+                      ? "border-primary ring-2 ring-primary"
+                      : "border-border hover:border-primary/50"
                   }`}
                 >
-                  {s}
+                  <span className="text-2xl">{s.emoji}</span>
+                  <span className="text-sm font-semibold">{s.label}</span>
+                  <span className="text-[11px] text-muted-foreground leading-tight">{s.desc}</span>
                 </button>
               ))}
             </div>
@@ -599,23 +627,42 @@ export default function AutopilotPage() {
         <Card>
           <CardHeader>
             <CardTitle>Voice</CardTitle>
+            <CardDescription>Choose the AI narrator voice for your videos.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2">
-              {FISH_AUDIO_PRESETS.map((v) => (
+            <div className="grid gap-3">
+              {[
+                { id: "default-male-1", name: "Professional Male", desc: "Clear, authoritative business tone", avatar: "👨‍💼", tags: ["Business", "Tutorial"] },
+                { id: "default-female-1", name: "Professional Female", desc: "Confident, warm corporate voice", avatar: "👩‍💼", tags: ["Corporate", "Education"] },
+                { id: "default-male-2", name: "Energetic Male", desc: "Upbeat, fast-paced, great for shorts", avatar: "🧑‍🎤", tags: ["Entertainment", "Shorts"] },
+                { id: "default-female-2", name: "Friendly Female", desc: "Casual, approachable, conversational", avatar: "👩‍🎓", tags: ["Lifestyle", "Vlogs"] },
+                { id: "default-narrator", name: "Documentary Narrator", desc: "Deep, cinematic narration style", avatar: "🎙️", tags: ["Documentary", "Storytelling"] },
+              ].map((v) => (
                 <button
                   key={v.id}
                   type="button"
                   onClick={() => setVoiceId(v.id)}
-                  className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                  className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all ${
                     voiceId === v.id
-                      ? "border-primary bg-primary/10 ring-1 ring-primary"
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <Mic className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{v.name}</span>
-                  {voiceId === v.id && <CheckCircle className="ml-auto h-4 w-4 text-primary" />}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-2xl shrink-0">
+                    {v.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{v.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{v.desc}</p>
+                    <div className="flex gap-1.5 mt-1.5">
+                      {v.tags.map((tag) => (
+                        <span key={tag} className="text-[10px] rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {voiceId === v.id && <CheckCircle className="h-5 w-5 text-primary shrink-0" />}
                 </button>
               ))}
             </div>
@@ -730,7 +777,7 @@ export default function AutopilotPage() {
               ["Frequency", FREQUENCIES.find((f) => f.value === frequency)?.label || frequency],
               ["Video Type", videoType],
               ["Art Style", artStyle],
-              ["Voice", FISH_AUDIO_PRESETS.find((v) => v.id === voiceId)?.name || voiceId],
+              ["Voice", voiceId.replace("default-", "").replace("-", " ")],
               ["Duration", durationPref],
               ["Language", LANGUAGES.find((l) => l.value === language)?.label || language],
               ["Approval", approvalMode === "approve" ? "Require Approval" : approvalMode === "notify_only" ? "Notify Only" : "Fully Automatic"],

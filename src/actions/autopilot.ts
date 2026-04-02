@@ -34,6 +34,9 @@ export async function saveAutopilotProfile(input: AutopilotProfileInput) {
     .eq("user_id", user.id)
     .single();
 
+  // voice_profile_id is a UUID FK — only set if it's a valid UUID, not a preset ID
+  const isUUID = input.voiceProfileId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.voiceProfileId);
+
   const profileData = {
     user_id: user.id,
     name: input.name,
@@ -42,7 +45,7 @@ export async function saveAutopilotProfile(input: AutopilotProfileInput) {
     video_type: input.videoType,
     target_platforms: input.targetPlatforms,
     posting_frequency: input.postingFrequency,
-    voice_profile_id: input.voiceProfileId || null,
+    voice_profile_id: isUUID ? input.voiceProfileId! : null,
     art_style: input.artStyle,
     duration_pref: input.durationPref,
     approval_mode: input.approvalMode,
@@ -56,17 +59,19 @@ export async function saveAutopilotProfile(input: AutopilotProfileInput) {
   let profileId: string;
 
   if (existing) {
-    await supabase
+    const { error: updateError } = await supabase
       .from("autopilot_profiles")
       .update(profileData)
       .eq("id", existing.id);
+    if (updateError) return { error: updateError.message };
     profileId = existing.id;
   } else {
-    const { data: created } = await supabase
+    const { data: created, error: insertError } = await supabase
       .from("autopilot_profiles")
       .insert(profileData)
       .select("id")
       .single();
+    if (insertError) return { error: insertError.message };
     if (!created) return { error: "Failed to create profile" };
     profileId = created.id;
   }
