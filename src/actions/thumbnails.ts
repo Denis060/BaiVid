@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { generateFluxImage } from "@/lib/providers/flux";
 import { generateIdeogramImage } from "@/lib/providers/ideogram";
 import { deductCredits } from "./credits";
@@ -88,9 +89,13 @@ export async function generateThumbnails(input: {
       }
     }
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage (use service role to bypass RLS)
+    const storageClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
     const fileName = `${user.id}/${randomUUID()}.png`;
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await storageClient.storage
       .from("thumbnails")
       .upload(fileName, imageBuffer, {
         contentType: "image/png",
@@ -99,10 +104,11 @@ export async function generateThumbnails(input: {
 
     if (uploadError) {
       console.error("Thumbnail upload failed:", uploadError);
+      lastError = `Upload failed: ${uploadError.message}`;
       continue;
     }
 
-    const { data: publicUrl } = supabase.storage
+    const { data: publicUrl } = storageClient.storage
       .from("thumbnails")
       .getPublicUrl(fileName);
 
