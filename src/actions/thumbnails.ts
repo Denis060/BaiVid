@@ -63,6 +63,7 @@ export async function generateThumbnails(input: {
   const basePrompt = `${stylePrompt}. Topic: "${input.title}". High resolution, sharp details.`;
 
   const thumbnails: GenerateThumbnailsResult["thumbnails"] = [];
+  let lastError = "";
 
   // Generate 3 variants (one per size)
   for (const size of SIZES) {
@@ -74,11 +75,15 @@ export async function generateThumbnails(input: {
     try {
       imageBuffer = await generateFluxImage(prompt, size.width, size.height);
     } catch (fluxErr) {
-      console.error("Flux.2 failed, trying Ideogram:", fluxErr);
+      const fluxMsg = fluxErr instanceof Error ? fluxErr.message : String(fluxErr);
+      console.error(`Flux.2 failed for ${size.name}:`, fluxMsg);
       try {
         imageBuffer = await generateIdeogramImage(prompt, size.width, size.height);
       } catch (ideoErr) {
-        console.error("Ideogram also failed:", ideoErr);
+        const ideoMsg = ideoErr instanceof Error ? ideoErr.message : String(ideoErr);
+        console.error(`Ideogram also failed for ${size.name}:`, ideoMsg);
+        // Store last error for user feedback
+        lastError = fluxMsg;
         continue;
       }
     }
@@ -116,7 +121,7 @@ export async function generateThumbnails(input: {
     if (!hasFlux && !hasIdeogram) {
       return { error: "No image generation API key configured. Add HUGGINGFACE_API_KEY or REPLICATE_API_KEY." };
     }
-    return { error: "Failed to generate thumbnails. The image API may be rate-limited — try again in a minute." };
+    return { error: `Failed to generate thumbnails: ${lastError || "image API error"}. Try again in a minute.` };
   }
 
   // Deduct 1 credit
