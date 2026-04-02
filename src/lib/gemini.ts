@@ -10,5 +10,5 @@ export function getGemini() {
 }
 
 export function getGeminiFlash() {
-  return getGemini().getGenerativeModel({ model: "gemini-1.5-flash" });
+  return getGemini().getGenerativeModel({ model: "gemini-2.0-flash" });
 }

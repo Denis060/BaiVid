@@ -137,9 +137,10 @@ Sort by virality_score descending. Return ONLY the JSON array, no markdown, no e
       savedCount: saved?.length || 0,
     };
   } catch (err) {
-    console.error("Gemini idea generation failed:", err);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Gemini idea generation failed:", errorMsg, err);
     return {
-      error: "Failed to generate ideas. Please check your API key and try again.",
+      error: `Failed to generate ideas: ${errorMsg.slice(0, 100)}`,
     };
   }
 }
