@@ -10,10 +10,10 @@ import { randomUUID } from "crypto";
 export type ThumbnailStyle = "bold" | "cinematic" | "minimal" | "documentary";
 
 const STYLE_PROMPTS: Record<ThumbnailStyle, string> = {
-  bold: "bold vibrant YouTube thumbnail, large dramatic text overlay, high contrast colors, attention-grabbing, professional graphic design",
-  cinematic: "cinematic film-quality thumbnail, dramatic lighting, shallow depth of field, moody color grading, professional photography",
-  minimal: "minimalist clean thumbnail, simple composition, lots of whitespace, modern design, subtle colors, elegant typography",
-  documentary: "documentary-style thumbnail, authentic feel, journalistic photography, realistic, natural lighting, news-quality",
+  bold: "vibrant colorful background, high contrast, neon lights, dramatic gradients, eye-catching visual, NO TEXT, NO WORDS, NO LETTERS",
+  cinematic: "cinematic background, dramatic lighting, shallow depth of field, moody color grading, professional photography, NO TEXT, NO WORDS",
+  minimal: "clean minimalist background, simple geometric shapes, soft gradients, modern design, subtle colors, NO TEXT, NO WORDS, NO LETTERS",
+  documentary: "realistic background, journalistic photography style, natural lighting, authentic environment, NO TEXT, NO WORDS, NO LETTERS",
 };
 
 interface ThumbnailSize {
@@ -61,7 +61,7 @@ export async function generateThumbnails(input: {
   }
 
   const stylePrompt = STYLE_PROMPTS[input.style];
-  const basePrompt = `${stylePrompt}. Topic: "${input.title}". High resolution, sharp details.`;
+  const basePrompt = `${stylePrompt}. Visual theme related to: "${input.title}". High resolution, sharp details, background image only, absolutely no text or letters.`;
 
   const thumbnails: GenerateThumbnailsResult["thumbnails"] = [];
   let lastError = "";

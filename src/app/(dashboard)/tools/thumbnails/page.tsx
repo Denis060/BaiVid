@@ -50,12 +50,20 @@ function ThumbnailContent() {
   const [settingThumbnail, setSettingThumbnail] = useState<string | null>(null);
   const [thumbnailSet, setThumbnailSet] = useState<string | null>(null);
 
+  // Text overlay controls
+  const [overlayText, setOverlayText] = useState(videoTitle || "");
+  const [overlayFontSize, setOverlayFontSize] = useState(48);
+  const [overlayColor, setOverlayColor] = useState("#ffffff");
+  const [overlayPosition, setOverlayPosition] = useState<"top" | "center" | "bottom">("bottom");
+  const [overlayBg, setOverlayBg] = useState(true);
+
   async function handleGenerate() {
     if (!title.trim()) return;
     setGenerating(true);
     setError("");
     setResults([]);
     setThumbnailSet(null);
+    if (!overlayText) setOverlayText(title.trim());
 
     const result = await generateThumbnails({
       title: title.trim(),
@@ -179,6 +187,72 @@ function ThumbnailContent() {
         </div>
       )}
 
+      {/* Text Overlay Controls */}
+      {!generating && results.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Text Overlay</CardTitle>
+            <CardDescription>Customize the text shown on your thumbnails.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Text</Label>
+              <Input
+                value={overlayText}
+                onChange={(e) => setOverlayText(e.target.value)}
+                placeholder="Your thumbnail title..."
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Size</Label>
+                <Input
+                  type="number"
+                  min={16}
+                  max={80}
+                  value={overlayFontSize}
+                  onChange={(e) => setOverlayFontSize(Number(e.target.value))}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Color</Label>
+                <Input
+                  type="color"
+                  value={overlayColor}
+                  onChange={(e) => setOverlayColor(e.target.value)}
+                  className="h-8 p-1"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Position</Label>
+                <select
+                  value={overlayPosition}
+                  onChange={(e) => setOverlayPosition(e.target.value as "top" | "center" | "bottom")}
+                  className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+                >
+                  <option value="top">Top</option>
+                  <option value="center">Center</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Background</Label>
+                <label className="flex items-center gap-2 h-8 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={overlayBg}
+                    onChange={(e) => setOverlayBg(e.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-xs">Dark bar</span>
+                </label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Results */}
       {!generating && results.length > 0 && (
         <div>
@@ -186,20 +260,47 @@ function ThumbnailContent() {
           <div className="grid gap-4 sm:grid-cols-3">
             {results.map((thumb) => (
               <Card key={thumb.id} className="overflow-hidden">
-                <div className="relative bg-muted">
+                <div
+                  className="relative bg-muted overflow-hidden"
+                  style={{
+                    aspectRatio:
+                      thumb.size === "Instagram"
+                        ? "1/1"
+                        : thumb.size === "Stories"
+                          ? "9/16"
+                          : "16/9",
+                  }}
+                >
                   <img
                     src={thumb.url}
                     alt={`${thumb.size} thumbnail`}
-                    className="w-full object-cover"
-                    style={{
-                      aspectRatio:
-                        thumb.size === "Instagram"
-                          ? "1/1"
-                          : thumb.size === "Stories"
-                            ? "9/16"
-                            : "16/9",
-                    }}
+                    className="w-full h-full object-cover"
                   />
+                  {/* Text overlay */}
+                  {overlayText && (
+                    <div
+                      className="absolute inset-x-0 flex justify-center px-3"
+                      style={{
+                        top: overlayPosition === "top" ? "8%" : overlayPosition === "center" ? "50%" : undefined,
+                        bottom: overlayPosition === "bottom" ? "8%" : undefined,
+                        transform: overlayPosition === "center" ? "translateY(-50%)" : undefined,
+                      }}
+                    >
+                      <p
+                        className="text-center font-bold leading-tight max-w-[90%]"
+                        style={{
+                          fontSize: `${Math.max(12, overlayFontSize * (thumb.size === "Stories" ? 0.5 : thumb.size === "Instagram" ? 0.6 : 0.4))}px`,
+                          color: overlayColor,
+                          backgroundColor: overlayBg ? "rgba(0,0,0,0.7)" : "transparent",
+                          padding: overlayBg ? "6px 12px" : "0",
+                          borderRadius: overlayBg ? "6px" : "0",
+                          textShadow: overlayBg ? "none" : "2px 2px 4px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        {overlayText}
+                      </p>
+                    </div>
+                  )}
                   {thumbnailSet === thumb.url && (
                     <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                       <Badge className="bg-primary text-primary-foreground">
