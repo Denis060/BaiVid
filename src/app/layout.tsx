@@ -14,9 +14,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Baivid - AI Video Creation Platform",
+  title: "Baivid — AI Video Creation Platform",
   description:
     "Create stunning AI-powered videos with avatars, faceless content, and more.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

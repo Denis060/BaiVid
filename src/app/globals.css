@@ -120,6 +120,27 @@
   --sidebar-ring: oklch(0.55 0.17 163.5);
 }
 
+/* ── Baivid Brand Design Tokens ── */
+:root {
+  --color-brand: #0a7c4e;
+  --color-brand-light: #0d9960;
+  --color-brand-dark: #065c39;
+  --color-brand-tint: #e8f5ef;
+
+  --color-success: #0a7c4e;
+  --color-success-bg: #e8f5ef;
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3c7;
+  --color-error: #dc2626;
+  --color-error-bg: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-bg: #dbeafe;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.08);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
