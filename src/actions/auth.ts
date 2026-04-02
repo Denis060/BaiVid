@@ -19,10 +19,43 @@ export async function login(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Check if first login — log signup bonus + send welcome email
+  if (data.user) {
+    const { count } = await supabase
+      .from("credits_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", data.user.id)
+      .eq("type", "bonus");
+
+    if (count === 0) {
+      const { data: userProfile } = await supabase
+        .from("users")
+        .select("credits_balance")
+        .eq("id", data.user.id)
+        .single();
+
+      await supabase.from("credits_transactions").insert({
+        user_id: data.user.id,
+        amount: 50,
+        type: "bonus",
+        description: "Welcome bonus — 50 free credits",
+        balance_after: userProfile?.credits_balance || 50,
+      });
+
+      try {
+        const { sendWelcomeEmail } = await import("@/lib/email");
+        const name = data.user.user_metadata?.full_name || "there";
+        await sendWelcomeEmail(data.user.email!, name, data.user.id);
+      } catch (err) {
+        console.error("Welcome email failed:", err);
+      }
+    }
   }
 
   redirect(next);
