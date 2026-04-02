@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
+import { deductCreditsService } from "@/lib/credits-service";
 import type { Database } from "@/types/supabase";
 import type { EditInstruction, TrimInstruction, TextOverlay, MusicSwap } from "@/lib/editor-types";
 import { exec } from "child_process";
@@ -149,24 +150,7 @@ export const videoRerenderFunction = inngest.createFunction(
         .eq("id", videoId);
 
       // Deduct 5 credits
-      const { data: user } = await supabase
-        .from("users")
-        .select("credits_balance")
-        .eq("id", userId)
-        .single();
-
-      if (user) {
-        const newBalance = Math.max(0, user.credits_balance - 5);
-        await supabase.from("users").update({ credits_balance: newBalance }).eq("id", userId);
-        await supabase.from("credits_transactions").insert({
-          user_id: userId,
-          amount: -5,
-          type: "usage",
-          description: "Video re-render (editor)",
-          reference_id: videoId,
-          balance_after: newBalance,
-        });
-      }
+      await deductCreditsService(userId, 5, "Video re-render (editor)", videoId);
     });
 
     return { videoId, status: "completed" };

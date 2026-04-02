@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
+import { deductCreditsService } from "@/lib/credits-service";
 import { routeVideoGeneration } from "@/lib/providers/video-router";
 import { generateFishAudioTTS } from "@/lib/providers/fish-audio";
 import { assembleVideo, type CaptionEntry } from "@/lib/ffmpeg";
@@ -163,30 +164,7 @@ export const facelessVideoFunction = inngest.createFunction(
     await step.run("deduct-credits", async () => {
       const durationMinutes = Math.max(1, Math.ceil(duration / 60));
       const creditCost = 15 * durationMinutes;
-
-      // Update balance
-      const { data: user } = await supabase
-        .from("users")
-        .select("credits_balance")
-        .eq("id", userId)
-        .single();
-
-      if (user) {
-        const newBalance = Math.max(0, user.credits_balance - creditCost);
-        await supabase
-          .from("users")
-          .update({ credits_balance: newBalance })
-          .eq("id", userId);
-
-        await supabase.from("credits_transactions").insert({
-          user_id: userId,
-          amount: -creditCost,
-          type: "usage",
-          description: `Faceless video (${durationMinutes}min, ${modelUsed})`,
-          reference_id: videoId,
-          balance_after: newBalance,
-        });
-      }
+      await deductCreditsService(userId, creditCost, `Faceless video (${durationMinutes}min, ${modelUsed})`, videoId);
     });
 
     return { videoId, status: "completed", modelUsed };

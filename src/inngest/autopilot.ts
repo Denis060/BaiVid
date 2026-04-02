@@ -1,6 +1,7 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
 import { decrypt } from "@/lib/encryption";
+import { deductCreditsService } from "@/lib/credits-service";
 import { getGeminiFlash } from "@/lib/gemini";
 import { getTrendingData } from "@/lib/trends";
 import { routeVideoGeneration } from "@/lib/providers/video-router";
@@ -339,26 +340,8 @@ export const autopilotRunForUser = inngest.createFunction(
 
     // Deduct credits and finalize run
     await step.run("deduct-credits-finalize", async () => {
-      const creditCost = 15; // Base cost for autopilot run
-      const { data: currentUser } = await supabase
-        .from("users")
-        .select("credits_balance")
-        .eq("id", userId)
-        .single();
-
-      if (currentUser) {
-        const newBalance = Math.max(0, currentUser.credits_balance - creditCost);
-        await supabase.from("users").update({ credits_balance: newBalance }).eq("id", userId);
-
-        await supabase.from("credits_transactions").insert({
-          user_id: userId,
-          amount: -creditCost,
-          type: "usage",
-          description: `Autopilot: ${idea.title}`,
-          reference_id: runId,
-          balance_after: newBalance,
-        });
-      }
+      const creditCost = 15;
+      await deductCreditsService(userId, creditCost, `Autopilot: ${idea.title}`, runId);
 
       const postedPlatforms = Object.entries(publishResults)
         .filter(([, r]) => r.success)

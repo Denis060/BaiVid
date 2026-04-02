@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
+import { deductCreditsService } from "@/lib/credits-service";
 import { routeVideoGeneration } from "@/lib/providers/video-router";
 import { assembleVideo } from "@/lib/ffmpeg";
 import { getGeminiFlash } from "@/lib/gemini";
@@ -113,16 +114,7 @@ export const audioVideoFunction = inngest.createFunction(
 
       const durationMinutes = Math.max(1, Math.ceil(durationSeconds / 60));
       const creditCost = 12 * durationMinutes;
-      const { data: user } = await supabase.from("users").select("credits_balance").eq("id", userId).single();
-      if (user) {
-        const newBalance = Math.max(0, user.credits_balance - creditCost);
-        await supabase.from("users").update({ credits_balance: newBalance }).eq("id", userId);
-        await supabase.from("credits_transactions").insert({
-          user_id: userId, amount: -creditCost, type: "usage",
-          description: `Audio-to-video (${durationMinutes}min)`,
-          reference_id: videoId, balance_after: newBalance,
-        });
-      }
+      await deductCreditsService(userId, creditCost, `Audio-to-video (${durationMinutes}min)`, videoId);
     });
 
     return { videoId, status: "completed" };

@@ -1,5 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { createClient } from "@supabase/supabase-js";
+import { deductCreditsService } from "@/lib/credits-service";
 import { createActor, submitTalk, getTalkStatus, type AvatarStyle } from "@/lib/did";
 import type { Database } from "@/types/supabase";
 
@@ -167,29 +168,7 @@ export const avatarVideoFunction = inngest.createFunction(
     await step.run("deduct-credits", async () => {
       const durationMinutes = Math.max(1, Math.ceil(duration / 60));
       const creditCost = 20 * durationMinutes;
-
-      const { data: user } = await supabase
-        .from("users")
-        .select("credits_balance")
-        .eq("id", userId)
-        .single();
-
-      if (user) {
-        const newBalance = Math.max(0, user.credits_balance - creditCost);
-        await supabase
-          .from("users")
-          .update({ credits_balance: newBalance })
-          .eq("id", userId);
-
-        await supabase.from("credits_transactions").insert({
-          user_id: userId,
-          amount: -creditCost,
-          type: "usage",
-          description: `Avatar video (${durationMinutes}min, D-ID, ${style})`,
-          reference_id: videoId,
-          balance_after: newBalance,
-        });
-      }
+      await deductCreditsService(userId, creditCost, `Avatar video (${durationMinutes}min, D-ID, ${style})`, videoId);
     });
 
     return { videoId, status: "completed", actorId };
