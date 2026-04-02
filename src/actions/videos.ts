@@ -207,3 +207,97 @@ export async function deleteVideo(videoId: string) {
   if (error) return { error: error.message };
   return { success: true };
 }
+
+/**
+ * Get videos with optional filter.
+ */
+export async function getVideos(
+  filter: "all" | "processing" | "completed" | "failed" | "autopilot" = "all",
+  search: string = "",
+  page: number = 1,
+  limit: number = 20
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { videos: [], count: 0 };
+
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from("videos")
+    .select("*", { count: "exact" })
+    .eq("user_id", user.id);
+
+  if (filter === "processing") {
+    query = query.in("status", ["draft", "scripting", "generating", "processing"]);
+  } else if (filter === "completed") {
+    query = query.eq("status", "completed");
+  } else if (filter === "failed") {
+    query = query.eq("status", "failed");
+  } else if (filter === "autopilot") {
+    query = query.eq("is_autopilot", true);
+  }
+
+  if (search.trim()) {
+    query = query.ilike("title", `%${search.trim()}%`);
+  }
+
+  const { data, count } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  return { videos: data || [], count: count || 0 };
+}
+
+/**
+ * Rename a video.
+ */
+export async function renameVideo(videoId: string, title: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("videos")
+    .update({ title })
+    .eq("id", videoId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+/**
+ * Get a signed download URL for a video (1 hour expiry).
+ */
+export async function getVideoDownloadUrl(videoId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: video } = await supabase
+    .from("videos")
+    .select("video_url")
+    .eq("id", videoId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!video?.video_url) return { error: "Video not found" };
+
+  // Extract storage path from public URL
+  const path = video.video_url.split("/videos/").pop();
+  if (!path) return { error: "Invalid video URL" };
+
+  const { data: signedUrl, error: signError } = await supabase.storage
+    .from("videos")
+    .createSignedUrl(path, 3600); // 1 hour
+
+  if (signError) return { error: signError.message };
+  return { url: signedUrl.signedUrl };
+}
