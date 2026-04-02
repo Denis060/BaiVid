@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +39,15 @@ import { getUserScripts } from "@/actions/scripts";
 import { useCreditsStore } from "@/stores/credits-store";
 import { GOOGLE_TTS_VOICES, type GoogleTTSVoice } from "@/lib/providers/google-tts";
 import { FISH_AUDIO_PRESETS } from "@/lib/providers/fish-audio";
+import { generateVoicePreview } from "@/actions/voice-preview";
+import { CAPTION_STYLES } from "@/lib/caption-styles";
 import type { Script } from "@/types";
+
+import {
+  Play,
+  Pause,
+  Volume2,
+} from "lucide-react";
 
 const VOICE_LANGUAGE_TABS = [
   { code: "en", label: "English", flag: "🇺🇸🇬🇧" },
@@ -54,6 +62,7 @@ const STEPS = [
   { label: "Script", icon: FileText },
   { label: "Art Style", icon: Palette },
   { label: "Voice", icon: Mic },
+  { label: "Captions", icon: Layers },
   { label: "Settings", icon: Clock },
   { label: "Review", icon: CheckCircle },
 ];
@@ -94,6 +103,13 @@ export default function FacelessCreatePage() {
   const [duration, setDuration] = useState(60);
   const [aspectRatio, setAspectRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
 
+  const [captionStyle, setCaptionStyle] = useState("highlight");
+
+  // Voice preview
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const [savedScripts, setSavedScripts] = useState<Script[]>([]);
   const [loadingScripts, setLoadingScripts] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -112,13 +128,33 @@ export default function FacelessCreatePage() {
     }
   }, [step, savedScripts.length]);
 
+  async function handleVoicePreview(id: string) {
+    if (playingVoice === id) {
+      audioRef.current?.pause();
+      setPlayingVoice(null);
+      return;
+    }
+    setPreviewingVoice(id);
+    const result = await generateVoicePreview(id);
+    if ("audioUrl" in result) {
+      if (audioRef.current) audioRef.current.pause();
+      const audio = new Audio(result.audioUrl);
+      audio.onended = () => setPlayingVoice(null);
+      audio.play();
+      audioRef.current = audio;
+      setPlayingVoice(id);
+    }
+    setPreviewingVoice(null);
+  }
+
   function canProceed(): boolean {
     switch (step) {
       case 0: return script.trim().length >= 10 && title.trim().length >= 2;
       case 1: return !!artStyle;
       case 2: return !!voiceId;
-      case 3: return !!duration && !!aspectRatio;
-      case 4: return credits >= creditCost;
+      case 3: return !!captionStyle;
+      case 4: return !!duration && !!aspectRatio;
+      case 5: return credits >= creditCost;
       default: return false;
     }
   }
@@ -330,19 +366,30 @@ export default function FacelessCreatePage() {
               {GOOGLE_TTS_VOICES
                 .filter((v) => v.languageCode.startsWith(voiceLangTab))
                 .map((voice) => (
-                  <button
+                  <div
                     key={voice.id}
-                    type="button"
-                    onClick={() => setVoiceId(voice.id)}
-                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                    className={`flex items-center gap-3 rounded-lg border p-3 transition-all cursor-pointer ${
                       voiceId === voice.id
                         ? "border-primary bg-primary/10 ring-1 ring-primary"
                         : "border-border hover:border-primary/50"
                     }`}
+                    onClick={() => setVoiceId(voice.id)}
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-lg shrink-0">
-                      {voice.flag}
-                    </div>
+                    {/* Play preview button */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleVoicePreview(voice.id); }}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-muted hover:bg-accent shrink-0 transition-colors"
+                      title="Preview voice"
+                    >
+                      {previewingVoice === voice.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : playingVoice === voice.id ? (
+                        <Volume2 className="h-4 w-4 text-primary animate-pulse" />
+                      ) : (
+                        <Play className="h-4 w-4 ml-0.5" />
+                      )}
+                    </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{voice.name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -365,7 +412,7 @@ export default function FacelessCreatePage() {
                     {voiceId === voice.id && (
                       <CheckCircle className="ml-auto h-5 w-5 text-primary shrink-0" />
                     )}
-                  </button>
+                  </div>
                 ))}
 
               {GOOGLE_TTS_VOICES.filter((v) => v.languageCode.startsWith(voiceLangTab)).length === 0 && (
@@ -378,8 +425,77 @@ export default function FacelessCreatePage() {
         </Card>
       )}
 
-      {/* Step 3: Duration + Aspect Ratio */}
+      {/* Step 3: Caption Style */}
       {step === 3 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Caption Style</CardTitle>
+            <CardDescription>
+              Choose how your captions will look in the video.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CAPTION_STYLES.map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => setCaptionStyle(style.id)}
+                  className={`relative rounded-xl border p-4 text-left transition-all ${
+                    captionStyle === style.id
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  {/* Preview area */}
+                  <div className="bg-muted/50 rounded-lg p-3 mb-3 min-h-[60px] flex items-center justify-center">
+                    <p
+                      className="text-xs text-center leading-relaxed"
+                      style={{
+                        color: style.primaryColor,
+                        fontFamily: style.fontFamily,
+                      }}
+                    >
+                      This is how your{" "}
+                      <span
+                        style={{
+                          backgroundColor:
+                            style.animation === "highlight"
+                              ? style.primaryColor
+                              : undefined,
+                          color:
+                            style.animation === "highlight"
+                              ? "#000"
+                              : style.primaryColor,
+                          fontWeight: "bold",
+                          padding: style.animation === "wordbox" ? "1px 4px" : undefined,
+                          border: style.animation === "wordbox" ? `1px solid ${style.primaryColor}` : undefined,
+                          borderRadius: style.animation === "wordbox" ? "4px" : undefined,
+                        }}
+                      >
+                        captions
+                      </span>{" "}
+                      will look.
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold">{style.name}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
+                    {style.description.split(".")[0]}
+                  </p>
+                  {captionStyle === style.id && (
+                    <div className="absolute top-2 right-2">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 4: Duration + Aspect Ratio */}
+      {step === 4 && (
         <Card>
           <CardHeader>
             <CardTitle>Settings</CardTitle>
@@ -445,7 +561,7 @@ export default function FacelessCreatePage() {
       )}
 
       {/* Step 4: Review */}
-      {step === 4 && (
+      {step === 5 && (
         <Card>
           <CardHeader>
             <CardTitle>Review & Create</CardTitle>
@@ -475,6 +591,12 @@ export default function FacelessCreatePage() {
                   {GOOGLE_TTS_VOICES.find((v) => v.id === voiceId)?.name ||
                     FISH_AUDIO_PRESETS.find((v) => v.id === voiceId)?.name ||
                     voiceId}
+                </span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Captions</span>
+                <span className="font-medium capitalize">
+                  {CAPTION_STYLES.find((s) => s.id === captionStyle)?.name || captionStyle}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
