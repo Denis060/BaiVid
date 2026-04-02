@@ -132,8 +132,19 @@ export const facelessVideoFunction = inngest.createFunction(
 
         // Upload assembled file to storage
         finalVideoUrl = await step.run("upload-assembled", async () => {
-          const { readFile } = await import("fs/promises");
-          const fileBuffer = await readFile(assembled.outputPath);
+          const isUrl = assembled.outputPath.startsWith("http");
+          let fileBuffer: Buffer;
+
+          if (isUrl) {
+            // Shotstack returns a URL — download it
+            const res = await fetch(assembled.outputPath);
+            if (!res.ok) throw new Error(`Failed to download from Shotstack: ${res.status}`);
+            fileBuffer = Buffer.from(await res.arrayBuffer());
+          } else {
+            // Local FFmpeg returns a file path — read it
+            const { readFile } = await import("fs/promises");
+            fileBuffer = await readFile(assembled.outputPath);
+          }
 
           const fileName = `${userId}/${videoId}.mp4`;
           const { error: uploadError } = await supabase.storage

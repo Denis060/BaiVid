@@ -267,20 +267,25 @@ export const autopilotRunForUser = inngest.createFunction(
 
     // Step 12: Upload and update
     const storageUrl = await step.run("upload-video", async () => {
-      const { readFile } = await import("fs/promises");
-      const buffer = await readFile(assembled.outputPath);
-      const fileName = `${userId}/${videoId}.mp4`;
+      let buffer: Buffer;
+      if (assembled.outputPath.startsWith("http")) {
+        const res = await fetch(assembled.outputPath);
+        if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+        buffer = Buffer.from(await res.arrayBuffer());
+      } else {
+        const { readFile } = await import("fs/promises");
+        buffer = await readFile(assembled.outputPath);
+        const { unlink } = await import("fs/promises");
+        await unlink(assembled.outputPath).catch(() => {});
+      }
 
+      const fileName = `${userId}/${videoId}.mp4`;
       await supabase.storage.from("videos").upload(fileName, buffer, {
         contentType: "video/mp4",
         upsert: true,
       });
 
       const { data: publicUrl } = supabase.storage.from("videos").getPublicUrl(fileName);
-
-      const { unlink } = await import("fs/promises");
-      await unlink(assembled.outputPath).catch(() => {});
-
       return publicUrl.publicUrl;
     });
 
