@@ -68,14 +68,39 @@ export async function reschedulePost(postId: string, newScheduledAt: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  // Get the post details for re-firing Inngest
+  const { data: post, error: fetchError } = await supabase
+    .from("scheduled_posts")
+    .select("video_id, platform, connected_account_id")
+    .eq("id", postId)
+    .eq("user_id", user.id)
+    .eq("status", "scheduled")
+    .single();
+
+  if (fetchError || !post) return { error: "Post not found or not schedulable" };
+
+  // Update the scheduled time
   const { error } = await supabase
     .from("scheduled_posts")
     .update({ scheduled_at: newScheduledAt })
-    .eq("id", postId)
-    .eq("user_id", user.id)
-    .eq("status", "scheduled");
+    .eq("id", postId);
 
   if (error) return { error: error.message };
+
+  // Re-fire Inngest event so the new step.sleep() uses the updated time
+  // The old event's step.sleep() will wake up, re-check status, and find the
+  // updated scheduled_at — but sending a fresh event ensures reliability
+  await inngest.send({
+    name: "post/publish-scheduled",
+    data: {
+      postId,
+      userId: user.id,
+      videoId: post.video_id,
+      platform: post.platform,
+      connectedAccountId: post.connected_account_id,
+    },
+  });
+
   return { success: true };
 }
 
